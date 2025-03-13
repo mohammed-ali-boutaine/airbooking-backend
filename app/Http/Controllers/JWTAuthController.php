@@ -17,7 +17,7 @@ class JWTAuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:6',
         ]);
 
         if ($validator->fails()) {
@@ -46,12 +46,12 @@ class JWTAuthController extends Controller
             }
 
             // Get the authenticated user.
-            // $user = auth()->user();
+            $user = auth()->user();
 
             // (optional) Attach the role to the token.
             // $token = JWTAuth::claims(['role' => $user->role])->fromUser($user);
 
-            return response()->json(compact('token'));
+            return response()->json(compact('user', 'token'), 201);
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not create token'], 500);
         }
@@ -104,8 +104,9 @@ class JWTAuthController extends Controller
             $user->password = Hash::make($request->get('password'));
         }
 
+        // return $request;
         $user->save();
-
+        // $usert = $request->name;
         return response()->json(compact('user'), 200);
     }
 }
