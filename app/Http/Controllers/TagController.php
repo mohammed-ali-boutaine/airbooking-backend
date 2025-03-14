@@ -38,14 +38,15 @@ class TagController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'icon_path' => 'sometimes|file|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ]);
 
         try {
-            // $path = $request->file('icon_path')->store('uploads');
+            $path = $request->file('icon_path') ? $request->file('icon_path')->store('uploads', 'public') : null;
 
             $tag = Tag::create([
                 "name" => $request->name,
-                // "icon_path" => $path
+                "icon_path" => $path
             ]);
 
             return response()->json([
@@ -53,7 +54,7 @@ class TagController extends Controller
                 'message' => 'Tag created successfully'
             ], 201);
         } catch (PDOException $e) {
-            return response()->json(["message" => $e->getMessage()], 500);
+            return response()->json(["message" => "Failed to create tag: " . $e->getMessage()], 500);
         }
     }
 
@@ -69,7 +70,7 @@ class TagController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(["message" => "Tag not found"], 404);
         } catch (PDOException $e) {
-            return response()->json(["message" => $e->getMessage()], 500);
+            return response()->json(["message" => "Failed to retrieve tag: " . $e->getMessage()], 500);
         }
     }
 
@@ -80,15 +81,23 @@ class TagController extends Controller
     {
         $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'icon_path' => 'sometimes|nullable|string|max:255',
+            'icon_path' => 'sometimes|file|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ]);
 
         try {
             $tag = Tag::findOrFail($id);
-            $tag->update($request->all());
-            return response()->json(["tag" => $tag], 200);
+
+            if ($request->hasFile('icon_path')) {
+                $path = $request->file('icon_path')->store('uploads', 'public');
+                $tag->icon_path = $path;
+            }
+            if ($request->has('name')) {
+                $tag->name = $request->name;
+            }
+            $tag->save();
+            return response()->json(["tag" => $tag, "message" => "Tag updated successfully"], 200);
         } catch (PDOException $e) {
-            return response()->json(["message" => $e->getMessage()], 500);
+            return response()->json(["message" => "Failed to update tag: " . $e->getMessage()], 500);
         }
     }
 
@@ -102,7 +111,7 @@ class TagController extends Controller
             $tag->delete();
             return response()->json(["message" => "Tag deleted successfully"], 200);
         } catch (PDOException $e) {
-            return response()->json(["message" => $e->getMessage()], 500);
+            return response()->json(["message" => "Failed to delete tag: " . $e->getMessage()], 500);
         }
     }
 }

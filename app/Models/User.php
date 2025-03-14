@@ -13,7 +13,7 @@ class User extends Authenticatable implements JWTSubject
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-
+    protected $table = 'users';
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.
      *
@@ -39,12 +39,23 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var list<string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
+    protected $fillable = ['name', 'email', 'password', 'role'];
 
+    public function getTable()
+    {
+        return $table ?? 'users';
+    }
+    protected  static function boot()
+    {
+        parent::boot();
+
+        // Ensure correct type when creating instances
+        static::creating(function ($model) {
+            if (!$model->role) {
+                $model->role = 'client'; // Default to client
+            }
+        });
+    }
     /**
      * The attributes that should be hidden for serialization.
      *

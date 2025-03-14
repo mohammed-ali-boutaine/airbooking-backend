@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+
+class Client extends User
+{
+    protected $attributes = ['role' => 'client'];
+    protected  static function boot()
+    {
+        parent::boot();
+
+        static::addGlobalScope('client', function (Builder $builder) {
+            $builder->where('role', 'client');
+        });
+    }
+}
