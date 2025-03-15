@@ -17,7 +17,7 @@ class HotelSeeder extends Seeder
                 'country' => 'Luxland',
                 'description' => 'A luxurious hotel with all amenities.',
                 'coordinate' => '40.7128,-74.0060',
-                'user_id' => 1, 
+                'owner_id' => 2, 
             ],
             [
                 'name' => 'Budget Inn',
@@ -26,7 +26,7 @@ class HotelSeeder extends Seeder
                 'country' => 'Budgetland',
                 'description' => 'An affordable place to stay.',
                 'coordinate' => '34.0522,-118.2437',
-                'user_id' => 2, 
+                'owner_id' => 2, 
             ],
             [
                 'name' => 'Family Resort',
@@ -35,7 +35,7 @@ class HotelSeeder extends Seeder
                 'country' => 'Familyland',
                 'description' => 'A family-friendly resort with activities for all ages.',
                 'coordinate' => '51.5074,-0.1278',
-                'user_id' => 3, 
+                'owner_id' => 2, 
             ],
         ];
 
@@ -47,7 +47,7 @@ class HotelSeeder extends Seeder
                 'country' => $hotel['country'],
                 'description' => $hotel['description'],
                 'coordinate' => $hotel['coordinate'],
-                'user_id' => $hotel['user_id'],
+                'owner_id' => $hotel['owner_id'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

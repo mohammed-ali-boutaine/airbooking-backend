@@ -18,9 +18,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // $this->call(HotelSeeder::class);
-        // $this->call(TagsSeeder::class);
-        // $this->call(HotelTagSeeder::class);
+
 
         
         $client = new Client([
@@ -41,5 +39,9 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password')
         ]);
         $admin->save();
+
+        $this->call(HotelSeeder::class);
+        $this->call(TagsSeeder::class);
+        $this->call(HotelTagSeeder::class);
     }
 }

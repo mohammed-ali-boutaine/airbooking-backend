@@ -3,9 +3,14 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\JWTAuthController;
-use App\Http\Controllers\TagController;
 use App\Http\Middleware\JwtMiddleware;
+use App\Http\Controllers\TagController;
+use App\Http\Controllers\HotelController;
+use App\Http\Controllers\JWTAuthController;
+
+Route::apiResource('hotels', HotelController::class);
+
+
 
 // ------------------------------------------------
 // public routes (guest)
