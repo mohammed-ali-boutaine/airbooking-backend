@@ -1,8 +1,10 @@
 <?php
 
+use App\Mail\TestEmail;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\JwtMiddleware;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\HotelController;
@@ -36,7 +38,14 @@ Route::middleware([JwtMiddleware::class])->group(function () {
 });
 
 
-
+// test api
+Route::get("/mail", function () {
+    $email = 'mohammedaliboutaine@gmail.com';
+    Mail::to($email)->send(new TestEmail());
+    return response()->json([
+        'message' => 'Email sent'
+    ], 200);
+});
 
 
 
