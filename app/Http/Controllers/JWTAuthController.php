@@ -39,9 +39,10 @@ class JWTAuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
+        $remberMe = $request->get('remember_me');
 
         try {
-            if (! $token = JWTAuth::attempt($credentials)) {
+            if (! $token = JWTAuth::attempt($credentials, $remberMe)) {
                 return response()->json(['error' => 'Invalid credentials'], 401);
             }
 
@@ -51,7 +52,12 @@ class JWTAuthController extends Controller
             // (optional) Attach the role to the token.
             // $token = JWTAuth::claims(['role' => $user->role])->fromUser($user);
 
-            return response()->json(compact('user', 'token'), 201);
+            return response()->json(compact('user', 'token'), 201)
+            ->cookie('token', $token, 60, '/', null, true, true); // set cookie;
+                // Secure: true (HTTPS only), HttpOnly: true (prevents JS access)
+                // HttpOnly: true → Prevents JavaScript from accessing the token
+                // Secure: true → Ensures the cookie is only sent over HTTPS (in production)
+                // SameSite: Strict → Prevents CSRF by ensuring cookies are only sent for same-site requests
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not create token'], 500);
         }
@@ -108,5 +114,10 @@ class JWTAuthController extends Controller
         $user->save();
         // $usert = $request->name;
         return response()->json(compact('user'), 200);
+    }
+
+    public function getCsrfToken()
+    {
+        return response()->json(['csrf_token' => csrf_token()]);
     }
 }

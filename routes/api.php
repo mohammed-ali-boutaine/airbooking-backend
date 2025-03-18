@@ -12,7 +12,16 @@ use App\Http\Controllers\JWTAuthController;
 
 Route::apiResource('hotels', HotelController::class);
 
+// hotel stuuff
 
+Route::get("/hotels", [HotelController::class, "index"]);
+Route::get("/hotels/{id}", [HotelController::class, "show"]);
+Route::post("/hotels", [HotelController::class, "store"])
+->middleware('jwt','is_hotel_owner');
+Route::put("/hotels/{id}", [HotelController::class, "update"])
+->middleware([JwtMiddleware::class]);
+Route::delete("/hotels/{id}", [HotelController::class, "destroy"])
+->middleware([JwtMiddleware::class]);
 
 // ------------------------------------------------
 // public routes (guest)

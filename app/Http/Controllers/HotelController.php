@@ -55,6 +55,10 @@ class HotelController extends Controller
      */
     public function update(Request $request, Hotel $hotel)
     {
+        if ($request->user()->cannot('update', $hotel)) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'address' => 'sometimes|string|max:255',

@@ -15,7 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         //
         // $middleware->append("jwt",JwtMiddleware::class);
-
+        $middleware->alias([
+            'jwt' => JwtMiddleware::class,
+            'is_hotel_owner' => \App\Http\Middleware\IsHotelOwner::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
