@@ -27,4 +27,10 @@ class Hotel extends Model
     {
         return $this->belongsToMany(Tag::class);
     }
+
+
+    public function rooms()
+    {
+        return $this->hasMany(Room::class);
+    }
 }

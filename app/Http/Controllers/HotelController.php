@@ -17,7 +17,7 @@ class HotelController extends Controller
 
         // $hotels = Hotel::all();
 
-        return response()->json(Hotel::all(), Response::HTTP_OK);
+        return response()->json(Hotel::with("rooms")->get(), Response::HTTP_OK); 
     }
 
     /**
