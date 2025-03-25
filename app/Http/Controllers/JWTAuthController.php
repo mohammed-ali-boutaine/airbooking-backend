@@ -23,7 +23,6 @@ class JWTAuthController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors()->toJson(), 400);
         }
-
         $user = User::create([
             'name' => $request->get('name'),
             'email' => $request->get('email'),
@@ -39,7 +38,7 @@ class JWTAuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
-        $remberMe = $request->get('remember_me');
+        $remberMe = $request->get('remember');
 
         try {
             if (! $token = JWTAuth::attempt($credentials, $remberMe)) {
@@ -50,8 +49,8 @@ class JWTAuthController extends Controller
             $user = auth()->user();
 
             // (optional) Attach the role to the token.
-            // $token = JWTAuth::claims(['role' => $user->role])->fromUser($user);
-
+            $token = JWTAuth::claims(['role' => $user->role])->fromUser($user);
+// 
             return response()->json(compact('user', 'token'), 201)
             ->cookie('token', $token, 60, '/', null, true, true); // set cookie;
                 // Secure: true (HTTPS only), HttpOnly: true (prevents JS access)

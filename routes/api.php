@@ -27,6 +27,9 @@ Route::delete("/hotels/{id}", [HotelController::class, "destroy"])
 // public routes (guest)
 Route::get("/tags", [TagController::class, "index"]);
 Route::get("/tags/{name}", [TagController::class, "search"]);
+
+
+
 Route::post('register', [JWTAuthController::class, 'register']);
 Route::post('login', [JWTAuthController::class, 'login']);
 
@@ -48,13 +51,13 @@ Route::middleware([JwtMiddleware::class])->group(function () {
 
 
 // test api
-Route::get("/mail", function () {
-    $email = 'mohammedaliboutaine@gmail.com';
-    Mail::to($email)->send(new TestEmail());
-    return response()->json([
-        'message' => 'Email sent'
-    ], 200);
-});
+// Route::get("/mail", function () {
+//     $email = 'mohammedaliboutaine@gmail.com';
+//     Mail::to($email)->send(new TestEmail());
+//     return response()->json([
+//         'message' => 'Email sent'
+//     ], 200);
+// });
 
 
 
