@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Room;
 use Illuminate\Http\Request;
 
 class RoomController extends Controller
@@ -20,6 +21,22 @@ class RoomController extends Controller
     public function store(Request $request)
     {
         //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'bed_numbers' => 'required|integer|min:1',
+            'number_of_guests' => 'required|integer|min:1',
+            'price_per_night' => 'required|numeric|min:0',
+            'is_available' => 'boolean',
+            'amenities' => 'nullable|array',
+            'amenities.*' => 'string',
+        ]);
+
+        $validated['owner_id'] = auth()->id();
+
+        $room = Room::create($validated);
+    
+        return response()->json(['message' => 'Room created successfully!', 'room' => $room], 201);
     }
 
     /**

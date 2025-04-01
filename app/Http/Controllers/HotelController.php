@@ -37,6 +37,15 @@ class HotelController extends Controller
             'owner_id' => 'required|exists:users,id',
         ]);
 
+    // Handle file uploads
+    if ($request->hasFile('hotel_profile')) {
+        $validated['hotel_profile'] = $request->file('hotel_profile')->store('hotels/profiles', 'public');
+    }
+
+    if ($request->hasFile('cover_path')) {
+        $validated['cover_path'] = $request->file('cover_path')->store('hotels/covers', 'public');
+    }
+
         $hotel = Hotel::create($validated);
 
         return response()->json($hotel, Response::HTTP_CREATED);

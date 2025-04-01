@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Middleware\JwtMiddleware;
+use App\Http\Middleware\IsAuth;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //
         // $middleware->append("jwt",JwtMiddleware::class);
         $middleware->alias([
-            'jwt' => JwtMiddleware::class,
+            'isAuth' => IsAuth::class,
             'is_hotel_owner' => \App\Http\Middleware\IsHotelOwner::class,
         ]);
     })
