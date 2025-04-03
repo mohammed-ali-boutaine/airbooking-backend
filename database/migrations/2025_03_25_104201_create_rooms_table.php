@@ -19,7 +19,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->integer('bed_numbers');
             $table->integer('capacity');
-            $table->decimal('price_per_night', 10, 2);
+            $table->decimal('price_per_night', 10, 2)->unsigned();
             $table->boolean('is_available')->default(true);
             $table->json('amenities')->nullable();
             $table->timestamps();

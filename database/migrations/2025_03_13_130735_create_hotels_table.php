@@ -13,22 +13,29 @@ return new class extends Migration
     {
         Schema::create('hotels', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            // 
+            $table->string('name', 255);
             $table->string('address');
-            $table->string('city');
-            $table->string('country');
+            $table->string('city', 100);
+            $table->string('country', 100);
             $table->text('description')->nullable();
 
-            $table->string('profile_path')->nullable();
-            $table->string('cover_path')->nullable();
+            $table->string('profile_path', 255)->nullable();
+            $table->string('cover_path', 255)->nullable();
 
-            $table->string('coordinate');
+            $table->json('coordinate');
 
             $table->foreignId('owner_id')
-                  ->constrained('users')
-                  ->onDelete('cascade')
-                  ->onUpdate('cascade');
+                ->constrained('users')
+                ->onDelete('cascade')
+                ->onUpdate('cascade');
 
+            // indexes
+            $table->index('name');
+            $table->index('city');
+            $table->index('country');
+
+            
             $table->timestamps();
         });
     }

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->foreignId('tag_id')
                 ->constrained()
                 ->onDelete('cascade');
+            $table->primary(['hotel_id', 'tag_id']);
             $table->timestamps();
         });
     }
