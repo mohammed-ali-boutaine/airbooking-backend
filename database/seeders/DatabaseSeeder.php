@@ -20,6 +20,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // users seeding for clietns owners and one admin
+        $this->call(UsersSeeder::class);
+
+
+
     // Create rooms
     Room::factory(10)->create()->each(function ($room) {
         RoomImage::factory(3)->create(['room_id' => $room->id]); // 3 images per room
@@ -28,24 +33,7 @@ class DatabaseSeeder extends Seeder
         //     RoomSeeder::class,
         // ]);
         
-        // $client = new Client([
-        //     'name' => 'John Doe',
-        //     'email' => 'john@example.com',
-        //     'password' => bcrypt('password')
-        // ]);
-        // $client->save();
-        // $owner = new Owner([
-        //     'name' => 'Hotel Owner',
-        //     'email' => 'owner@example.com',
-        //     'password' => bcrypt('password')
-        // ]);
-        // $owner->save();
-        // $admin = new Admin([
-        //     'name' => 'Admin User',
-        //     'email' => 'admin@example.com',
-        //     'password' => bcrypt('password')
-        // ]);
-        // $admin->save();
+       
 
         // $this->call(HotelSeeder::class);
         // $this->call(TagsSeeder::class);
