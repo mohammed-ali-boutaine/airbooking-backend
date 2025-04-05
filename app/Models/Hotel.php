@@ -14,20 +14,30 @@ class Hotel extends Model
 
     protected $fillable = [
         'name',
+        'description',
         'address',
         'city',
         'country',
-        'description',
         'profile_path',
         'cover_path',
         'coordinate',
         'owner_id'
     ];
+
+
+    public function owener(){
+        return $this->hasOne(Owner::class);
+    }
+
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class);
     }
 
+    public function reviews(){
+        return $this->hasMany(Review::class);
+    }
 
     public function rooms()
     {

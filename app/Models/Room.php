@@ -23,7 +23,7 @@ class Room extends Model
         'name',
         'description',
         'bed_numbers',
-        'number_of_guests',
+        'capacity',
         'price_per_night',
         'is_available',
         'amenities',
@@ -34,11 +34,6 @@ class Room extends Model
         'amenities' => 'array',
     ];
 
-    public function owner()
-    {
-        return $this->belongsTo(User::class, 'owner_id');
-    }
-
     public function hotel()
     {
         return $this->belongsTo(Hotel::class);
@@ -47,5 +42,13 @@ class Room extends Model
     public function images()
     {
         return $this->hasMany(RoomImage::class);
+    }
+
+    public function booking(){
+        return $this->hasMany(Booking::class);
+    }
+
+    public function isAvailbale(){
+
     }
 }

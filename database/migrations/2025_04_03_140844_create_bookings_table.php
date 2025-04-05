@@ -18,6 +18,10 @@ return new class extends Migration
             $table->date('check_in')->nullable(false);
             $table->date('check_out')->nullable(false);
             $table->decimal('total_price', 10, 2);
+            $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
+            $table->index(['user_id', 'status']);
+            $table->index(['room_id', 'check_in', 'check_out']);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

@@ -18,6 +18,9 @@ class Owner extends User
         });
     }
 
+    public function hotels(){
+        return $this->hasMany(Hotel::class);
+    }
 
 }
 

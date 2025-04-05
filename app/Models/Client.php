@@ -8,7 +8,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Client extends User
 {
+    protected $fillable = ['address']; 
     protected $attributes = ['role' => 'client'];
+
+
+
     protected  static function boot()
     {
         parent::boot();
@@ -17,4 +21,10 @@ class Client extends User
             $builder->where('role', 'client');
         });
     }
+
+    public function booking(){
+        return $this->hasMany(Booking::class);
+    }
+
+
 }

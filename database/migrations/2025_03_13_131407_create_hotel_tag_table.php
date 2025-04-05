@@ -13,7 +13,6 @@ return new class extends Migration
     {
         // pivot table
         Schema::create('hotel_tag', function (Blueprint $table) {
-            $table->id();
             $table->foreignId('hotel_id')
                 ->constrained()
                 ->onDelete('cascade');
