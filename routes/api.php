@@ -10,12 +10,23 @@ use App\Http\Controllers\TagController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\JWTAuthController;
+use App\Http\Controllers\SocialAuthController;
 use App\Http\Middleware\IsAuth;
+use App\Models\User;
 
 // auth 
+Route::get('users',function (){
+
+    $users = User::all();
+    return response()->json([
+        'users'=>$users
+    ]);
+} );
 
 Route::post('register', [JWTAuthController::class, 'register']);
 Route::post('login', [JWTAuthController::class, 'login']);
+Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect']);
+Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback']);
 
 // Route::post('login/google', [AuthController::class, 'loginWithGoogle']);
 // Route::post('login/facebook', [AuthController::class, 'loginWithFacebook']);
@@ -58,7 +69,7 @@ Route::delete("/tags/{id}", [TagController::class, "destroy"]);
 // ------------------------------------------------
 // for auth user
 Route::middleware([IsAuth::class])->group(function () {
-    Route::get('user', [JWTAuthController::class, 'getUser']);
+    Route::get('me', [JWTAuthController::class, 'getUser']);
     Route::post('logout', [JWTAuthController::class, 'logout']);
     Route::put('user', [JWTAuthController::class, 'updateUser']);
 });

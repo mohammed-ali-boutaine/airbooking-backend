@@ -4,47 +4,35 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 
 class SocialAuthController extends Controller
 {
-    public function redirectToGoogle()
+    public function redirect($provider)
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver($provider)->stateless()->redirect();
     }
 
-    public function handleGoogleCallback()
+    public function callback($provider)
     {
-        $user = Socialite::driver('google')->user();
-        return $this->handleSocialLogin($user);
-    }
+        $socialUser = Socialite::driver($provider)->stateless()->user();
 
-    public function redirectToFacebook()
-    {
-        return Socialite::driver('facebook')->redirect();
-    }
+        $user = User::updateOrCreate([
+            'email' => $socialUser->getEmail(),
+        ], [
+            'name' => $socialUser->getName() ?? $socialUser->getNickname(),
+            'provider' => $provider,
+            'provider_id' => $socialUser->getId(),
+            'email_verified_at' => now(),
+            'password' => bcrypt(Str::random(24)), // required field
+        ]);
 
-    public function handleFacebookCallback()
-    {
-        $user = Socialite::driver('facebook')->user();
-        return $this->handleSocialLogin($user);
-    }
+        // Issue JWT
+        $token = JWTAuth::fromUser($user);
 
-    private function handleSocialLogin($socialUser)
-    {
-        $user = User::where('email', $socialUser->getEmail())->first();
-
-        if (!$user) {
-            $user = User::create([
-                'name' => $socialUser->getName(),
-                'email' => $socialUser->getEmail(),
-                'password' => bcrypt(str_random(16)), // random password or generate one
-            ]);
-        }
-
-        Auth::login($user);
-        return response()->json(['user' => $user]);
+        return redirect("http://localhost:3000/oauth-success?token=$token");
     }
 }

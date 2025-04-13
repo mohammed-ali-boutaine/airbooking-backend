@@ -1,0 +1,60 @@
+
+
+
+
+Statistiques :
+
+​
+
+Nombre total de cours par statut
+Répartition des cours par catégories et sous-catégories.
+​
+2️⃣ Gestion des Permissions et Rôles
+
+Implémentation d'un système de rôles (Candidat, Recruteur, Admin).
+
+Un recruteur ne peut gérer que ses propres offres d’emploi (l'utilisation des Policies).
+
+Un administrateur peut gérer toutes les offres et utilisateurs.
+
+Un candidat ne peut que postuler à des offres et gérer son profil (l'utilisation des Policies).
+
+3️⃣ Authentification Strictement par JWT
+
+Suppression de Sanctum : JWT sera utilisé exclusivement via tymon/jwt-auth.
+
+Génération et validation stricte des tokens JWT pour chaque requête.
+
+Rafraîchissement du token JWT via un endpoint dédié.
+
+Middleware d’authentification personnalisé pour s'assurer que seules les requêtes JWT valides sont acceptées.
+
+
+Cours :
+
+GET /api/V1/courses : Lister tous les cours.
+GET /api/V1/courses/{id} : Obtenir les détails d'un cours.
+POST /api/V1/courses : Créer un nouveau cours.
+PUT /api/V1/courses/{id} : Modifier un cours
+DELETE /api/V1/courses/{id} : Supprimer un cours.
+
+
+
+
+Catégories :
+
+GET /api/V1/tags: Lister toutes les tags.
+GET /api/V1/tags/{id} : Obtenir les détails d'un tags. 
+POST /api/V1/tags: Créer une nouvelle tag. 
+PUT /api/V1/tags/{id} : Modifier un tag. 
+DELETE /api/V1/tags/{id} : Supprimer un tag.
+
+
+
+
+Statistiques :
+
+GET /api/V1/stats/courses : Obtenir des statistiques sur les cours.
+GET /api/V1/stats/categories: Obtenir des statistiques sur les categories.
+GET /api/V1/stats/tags: Obtenir des statistiques sur les tags.
+​

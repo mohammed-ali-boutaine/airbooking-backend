@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
 class JWTAuthController extends Controller
@@ -70,9 +71,16 @@ class JWTAuthController extends Controller
                 return response()->json(['error' => 'User not found'], 404);
             }
         } catch (JWTException $e) {
+            Log::error('JWT Token Error: ' . $e->getMessage());
+    
+            // Check if the token is expired
+            if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenExpiredException) {
+                return response()->json(['error' => 'Token has expired'], 401);
+            }
+    
             return response()->json(['error' => 'Invalid token'], 400);
         }
-
+    
         return response()->json(compact('user'));
     }
 
