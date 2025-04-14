@@ -3,9 +3,9 @@
 use App\Mail\TestEmail;
 use Illuminate\Http\Request;
 
-use Illuminate\Support\Facades\Mail;
+// use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
-use App\Http\Middleware\JwtMiddleware;
+// use App\Http\Middleware\JwtMiddleware;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\HotelController;
