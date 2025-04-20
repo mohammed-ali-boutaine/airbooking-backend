@@ -11,5 +11,5 @@ Route::get('/', function () {
     $owners = Owner::all(); // Get all owners
     $admins = Admin::all(); // Get all admins
     
-    return $owners;
+    return $admins;
 });

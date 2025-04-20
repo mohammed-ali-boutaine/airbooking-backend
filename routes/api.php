@@ -10,7 +10,7 @@ use App\Http\Controllers\TagController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\JWTAuthController;
-use App\Http\Controllers\SocialAuthController;
+// use App\Http\Controllers\SocialAuthController;
 use App\Http\Middleware\IsAuth;
 use App\Models\User;
 
@@ -25,8 +25,8 @@ Route::get('users',function (){
 
 Route::post('register', [JWTAuthController::class, 'register']);
 Route::post('login', [JWTAuthController::class, 'login']);
-Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect']);
-Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback']);
+// Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect']);
+// Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback']);
 
 // Route::post('login/google', [AuthController::class, 'loginWithGoogle']);
 // Route::post('login/facebook', [AuthController::class, 'loginWithFacebook']);
@@ -39,6 +39,12 @@ Route::get('/rooms/{id}', [RoomController::class, 'show']);
 Route::apiResource('hotels', HotelController::class);
 
 // hotel stuuff
+Route::get("/hotelshome", [HotelController::class, "homePageHotels"]);
+Route::get("/hotels/test",function(){
+    return response()->json([
+        "message" => "Hello"
+    ]);
+});
 
 Route::get("/hotels", [HotelController::class, "index"]);
 Route::get("/hotels/{id}", [HotelController::class, "show"]);
@@ -52,12 +58,7 @@ Route::delete("/hotels/{id}", [HotelController::class, "destroy"])
 // ------------------------------------------------
 // public routes (guest)
 Route::get("/tags", [TagController::class, "index"]);
-Route::get("/tags/{name}", [TagController::class, "search"]);
-
-
-
-
-
+Route::get("/tags/search/{name}", [TagController::class, "search"]);
 
 // ------------------------------------------------
 // for admin
@@ -75,14 +76,6 @@ Route::middleware([IsAuth::class])->group(function () {
 });
 
 
-// test api
-// Route::get("/mail", function () {
-//     $email = 'mohammedaliboutaine@gmail.com';
-//     Mail::to($email)->send(new TestEmail());
-//     return response()->json([
-//         'message' => 'Email sent'
-//     ], 200);
-// });
 
 
 

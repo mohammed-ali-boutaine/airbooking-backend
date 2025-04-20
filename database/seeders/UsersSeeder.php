@@ -6,7 +6,7 @@ use App\Models\Admin;
 use App\Models\Owner;
 use App\Models\Client;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class UsersSeeder extends Seeder
 {

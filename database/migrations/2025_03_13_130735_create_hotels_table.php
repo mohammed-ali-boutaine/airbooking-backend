@@ -35,7 +35,7 @@ return new class extends Migration
             $table->index('city');
             $table->index('country');
 
-            
+
             $table->timestamps();
         });
     }

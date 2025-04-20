@@ -11,7 +11,12 @@ return new class extends Migration {
             $table->id();
             // $table->foreignId('room_id')->constrained()->onDelete('cascade'); // Links to Room
             $table->string('image_path'); 
-            $table->morphs('imageable'); // Polymorphic relationship
+            $table->foreignId('room_id')
+            ->constrained('rooms')
+                ->onDelete('cascade')
+                ->onUpdate('cascade');
+
+
             $table->timestamps();
         });
     }

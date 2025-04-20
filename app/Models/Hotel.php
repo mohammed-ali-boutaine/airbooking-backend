@@ -5,10 +5,12 @@ namespace App\Models;
 use App\Models\Tag;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Hotel extends Model
 {
-    //
+    use HasFactory;
+
     protected $table = 'hotels';
 
 
@@ -25,8 +27,9 @@ class Hotel extends Model
     ];
 
 
-    public function owener(){
-        return $this->hasOne(Owner::class);
+    public function owner()
+    {
+        return $this->belongsTo(Owner::class);
     }
 
 
@@ -35,7 +38,8 @@ class Hotel extends Model
         return $this->belongsToMany(Tag::class);
     }
 
-    public function reviews(){
+    public function reviews()
+    {
         return $this->hasMany(Review::class);
     }
 

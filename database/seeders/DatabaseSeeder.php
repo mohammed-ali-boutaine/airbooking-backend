@@ -21,22 +21,24 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // users seeding for clietns owners and one admin
-        $this->call(UsersSeeder::class);
+        // $this->call(UsersSeeder::class);
 
 
 
-    // Create rooms
-    Room::factory(10)->create()->each(function ($room) {
-        RoomImage::factory(3)->create(['room_id' => $room->id]); // 3 images per room
-    });
+        // Create rooms
+        // Room::factory(10)->create()->each(function ($room) {
+        //     RoomImage::factory(3)->create(['room_id' => $room->id]); // 3 images per room
+        // });
         // $this->call([
         //     RoomSeeder::class,
         // ]);
-        
-       
 
-        // $this->call(HotelSeeder::class);
-        // $this->call(TagsSeeder::class);
-        // $this->call(HotelTagSeeder::class);
+
+
+        $this->call([
+            // Other seeders
+            // HotelSeeder::class,
+            TagsSeeder::class
+        ]);
     }
 }
