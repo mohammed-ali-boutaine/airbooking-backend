@@ -22,7 +22,7 @@ class JWTAuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'profile_path' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:2048'
+            // 'profile_path' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
         if ($validator->fails()) {
@@ -36,12 +36,12 @@ class JWTAuthController extends Controller
         ];
 
         // Handle profile image upload
-        if ($request->hasFile('profile_path')) {
-            $file = $request->file('profile_path');
-            $extension = $file->getClientOriginalExtension();
-            $filename = 'profile_' . Str::uuid() . '.' . $extension;
-            $userData['profile_path'] = $file->storeAs('user-profiles', $filename, 'public');
-        }
+        // if ($request->hasFile('profile_path')) {
+        //     $file = $request->file('profile_path');
+        //     $extension = $file->getClientOriginalExtension();
+        //     $filename = 'profile_' . Str::uuid() . '.' . $extension;
+        //     $userData['profile_path'] = $file->storeAs('user-profiles', $filename, 'public');
+        // }
 
         $user = User::create($userData);
         $token = JWTAuth::fromUser($user);

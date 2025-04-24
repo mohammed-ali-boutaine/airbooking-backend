@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 // use Illuminate\Support\Facades\Storage;
 // use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+
 /**
  * @var \App\Models\User $user
  */
@@ -30,7 +31,7 @@ class HotelController extends Controller
     {
         try {
             $hotels = Hotel::with([
-                'owner:id,name',
+                // 'owner:id,name',
                 'rooms.images' => function ($query) {
                     $query->limit(3);
                 },
@@ -41,7 +42,10 @@ class HotelController extends Controller
                 ->limit(10)
                 ->get();
 
-            return response()->json(['data' => $hotels]);
+            $testHotel = Hotel::with(['rooms.primaryImage'])->get();
+
+
+            return response()->json(['data' => $hotels, 'test' => $testHotel]);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error fetching hotels: ' . $e->getMessage()], 500);
         }
@@ -73,8 +77,8 @@ class HotelController extends Controller
                     'current_page' => $hotels->currentPage(),
                     'last_page' => $hotels->lastPage(),
                 ]
-                ]);
-            } catch (\Exception $e) {
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Error fetching hotels: ' . $e->getMessage()
             ], 500);
@@ -194,7 +198,7 @@ class HotelController extends Controller
             if ($request->user()->cannot('update', $hotel)) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
-    
+
             // Validation
             $validated = $request->validate([
                 'name' => 'sometimes|string|max:255',
@@ -214,11 +218,11 @@ class HotelController extends Controller
                 'tags' => 'nullable|array',
                 'tags.*' => 'integer|exists:tags,id',
             ]);
-    
+
             // Store old file paths
             $oldProfilePath = $hotel->profile_path;
             $oldCoverPath = $hotel->cover_path;
-    
+
             // Handle file uploads
             try {
                 if ($request->hasFile('profile_path')) {
@@ -227,7 +231,7 @@ class HotelController extends Controller
                     $filename = 'profile_' . Str::uuid() . '.' . $extension;
                     $validated['profile_path'] = $file->storeAs('hotel-info', $filename, 'public');
                 }
-    
+
                 if ($request->hasFile('cover_path')) {
                     $file = $request->file('cover_path');
                     $extension = $file->getClientOriginalExtension();
@@ -237,7 +241,7 @@ class HotelController extends Controller
             } catch (\Exception $e) {
                 return response()->json(['message' => 'File upload failed'], 500);
             }
-    
+
             // Handle coordinate
             if (isset($validated['coordinate'])) {
                 $validated['coordinate'] = json_encode([
@@ -245,40 +249,39 @@ class HotelController extends Controller
                     'lng' => (float)$validated['coordinate']['lng']
                 ]);
             }
-    
+
             // Start transaction
             DB::beginTransaction();
-    
+
             try {
                 // Update hotel
                 $hotel->update($validated);
-    
+
                 // Sync tags if provided
                 if (isset($validated['tags'])) {
                     $hotel->tags()->sync($validated['tags']);
                 }
-    
+
                 // Commit transaction
                 DB::commit();
-    
+
                 // Clean up old files if update was successful
                 if (isset($validated['profile_path']) && $oldProfilePath && $oldProfilePath !== $validated['profile_path']) {
                     Storage::disk('public')->delete($oldProfilePath);
                 }
-    
+
                 if (isset($validated['cover_path']) && $oldCoverPath && $oldCoverPath !== $validated['cover_path']) {
                     Storage::disk('public')->delete($oldCoverPath);
                 }
-    
+
                 return response()->json([
                     'data' => new HotelResource($hotel->load('tags')),
-                    'request'=>$validated,
+                    'request' => $validated,
                     'message' => 'Hotel updated successfully'
                 ]);
-    
             } catch (\Exception $e) {
                 DB::rollBack();
-                
+
                 // Clean up any newly uploaded files if transaction failed
                 if (isset($validated['profile_path'])) {
                     Storage::disk('public')->delete($validated['profile_path']);
@@ -286,10 +289,9 @@ class HotelController extends Controller
                 if (isset($validated['cover_path'])) {
                     Storage::disk('public')->delete($validated['cover_path']);
                 }
-    
+
                 return response()->json(['message' => 'Hotel update failed'], 500);
             }
-    
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Validation failed',
