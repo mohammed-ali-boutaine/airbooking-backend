@@ -15,35 +15,25 @@ class HotelResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            // 'id'          => $this->id,
-            'name'        => $this->name,
-            'address'     => $this->address,
-            'city'        => $this->city,
-            'country'     => $this->country,
+            'id' => $this->id,
+            'name' => $this->name,
             'description' => $this->description,
-
-
-
-            'profile_image' => $this->profile_path
-                ? asset('storage/' . $this->profile_path)
-                : asset('images/default-hotel.jpg'), // fallback
-
-            'cover_image' => $this->cover_path
-                ? asset('storage/' . $this->cover_path)
-                : asset('images/default-cover.jpg'),
-
-                'coordinate'  => json_decode($this->coordinate, true), // return as array
-
-            'owner' => [
-                'id'   => $this->owner->id,
-                'name' => $this->owner->name,
-                'email' => $this->owner->email,
-            ],
-
-            'created_at'  => $this->created_at->toDateTimeString(),
-            'updated_at'  => $this->updated_at->toDateTimeString(),
+            'address' => $this->address,
+            'city' => $this->city,
+            'country' => $this->country,
+            'phone' => $this->phone,
+            'email' => $this->email,
+            'website' => $this->website,
+            'profile_path' => $this->profile_path ? asset('storage/' . $this->profile_path) : null,
+            'cover_path' => $this->cover_path ? asset('storage/' . $this->cover_path) : null,
+            'coordinate' => json_decode($this->coordinate),
+            'owner_id' => $this->owner_id,
+            'owner' => $this->whenLoaded('owner'),
+            'tags' => $this->whenLoaded('tags'),
+            'rooms' => $this->whenLoaded('rooms'),
+            'reviews' => $this->whenLoaded('reviews'),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
-
-    
     }
 }

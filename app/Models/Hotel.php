@@ -13,7 +13,6 @@ class Hotel extends Model
 
     protected $table = 'hotels';
 
-
     protected $fillable = [
         'name',
         'description',
@@ -23,15 +22,16 @@ class Hotel extends Model
         'profile_path',
         'cover_path',
         'coordinate',
-        'owner_id'
+        'owner_id',
+        'phone',
+        'email',
+        'website'
     ];
-
 
     public function owner()
     {
-        return $this->belongsTo(Owner::class);
+        return $this->belongsTo(User::class, 'owner_id');
     }
-
 
     public function tags(): BelongsToMany
     {

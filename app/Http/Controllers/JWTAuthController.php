@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Log;
+use DB;
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
@@ -19,17 +22,28 @@ class JWTAuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
+            'profile_path' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors()->toJson(), 400);
         }
-        $user = User::create([
+
+        $userData = [
             'name' => $request->get('name'),
             'email' => $request->get('email'),
             'password' => Hash::make($request->get('password')),
-        ]);
+        ];
 
+        // Handle profile image upload
+        if ($request->hasFile('profile_path')) {
+            $file = $request->file('profile_path');
+            $extension = $file->getClientOriginalExtension();
+            $filename = 'profile_' . Str::uuid() . '.' . $extension;
+            $userData['profile_path'] = $file->storeAs('user-profiles', $filename, 'public');
+        }
+
+        $user = User::create($userData);
         $token = JWTAuth::fromUser($user);
 
         return response()->json(compact('user', 'token'), 201);
@@ -49,15 +63,7 @@ class JWTAuthController extends Controller
             // Get the authenticated user.
             $user = auth()->user();
 
-            // (optional) Attach the role to the token.
-            $token = JWTAuth::claims(['role' => $user->role])->fromUser($user);
-// 
-            return response()->json(compact('user', 'token'), 201)
-            ->cookie('token', $token, 60, '/', null, true, true); // set cookie;
-                // Secure: true (HTTPS only), HttpOnly: true (prevents JS access)
-                // HttpOnly: true → Prevents JavaScript from accessing the token
-                // Secure: true → Ensures the cookie is only sent over HTTPS (in production)
-                // SameSite: Strict → Prevents CSRF by ensuring cookies are only sent for same-site requests
+            return response()->json(compact('user', 'token'), 201);
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not create token'], 500);
         }
@@ -72,15 +78,15 @@ class JWTAuthController extends Controller
             }
         } catch (JWTException $e) {
             Log::error('JWT Token Error: ' . $e->getMessage());
-    
+
             // Check if the token is expired
             if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenExpiredException) {
                 return response()->json(['error' => 'Token has expired'], 401);
             }
-    
+
             return response()->json(['error' => 'Invalid token'], 400);
         }
-    
+
         return response()->json(compact('user'));
     }
 
@@ -101,12 +107,18 @@ class JWTAuthController extends Controller
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'sometimes|string|min:6|confirmed',
+            'phone' => 'sometimes|string|max:20',
+            'profile_path' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:2048' // Added profile image validation
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors()->toJson(), 400);
         }
 
+        // Store old profile path for cleanup if needed
+        $oldProfilePath = $user->profile_path;
+
+        // Update user fields if provided
         if ($request->has('name')) {
             $user->name = $request->get('name');
         }
@@ -116,13 +128,97 @@ class JWTAuthController extends Controller
         if ($request->has('password')) {
             $user->password = Hash::make($request->get('password'));
         }
+        if ($request->has('phone')) {
+            $user->phone = $request->get('phone');
+        }
 
-        // return $request;
+        // Handle profile image upload
+        if ($request->hasFile('profile_path')) {
+            $file = $request->file('profile_path');
+            $extension = $file->getClientOriginalExtension();
+            $filename = 'profile_' . Str::uuid() . '.' . $extension;
+            $user->profile_path = $file->storeAs('user-profiles', $filename, 'public');
+
+            // Delete old profile image if it exists
+            if ($oldProfilePath && Storage::disk('public')->exists($oldProfilePath)) {
+                Storage::disk('public')->delete($oldProfilePath);
+            }
+        }
+
         $user->save();
-        // $usert = $request->name;
-        return response()->json(compact('user'), 200);
+
+        return response()->json([
+            'user' => $user,
+            'message' => 'User updated successfully'
+        ], 200);
     }
 
+    /**
+     * Patch update user details (partial update)
+     */
+    public function patchUser(Request $request)
+    {
+        $user = JWTAuth::parseToken()->authenticate();
+    
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'sometimes|nullable|string|max:20',
+            'profile_path' => 'sometimes|nullable|file|image|max:2048'
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+    
+        // DB::beginTransaction();
+    
+        try {
+            $oldProfilePath = $user->profile_path;
+    
+            // Update user fields
+            $user->fill($request->only(['name', 'email', 'phone']));
+    
+            // Handle profile image upload
+            if ($request->hasFile('profile_path')) {
+                $file = $request->file('profile_path');
+                $filename = 'profile_' . Str::uuid() . '.' . $file->guessExtension();
+                $path = $file->storeAs('user-profiles', $filename, 'public');
+                
+                $user->profile_path = $path;
+                
+                // Delete old image after successful upload
+                if ($oldProfilePath && Storage::disk('public')->exists($oldProfilePath)) {
+                    Storage::disk('public')->delete($oldProfilePath);
+                }
+            } 
+            // Handle profile image removal
+            elseif ($request->has('profile_path') && $request->input('profile_path') === null) {
+                if ($oldProfilePath && Storage::disk('public')->exists($oldProfilePath)) {
+                    Storage::disk('public')->delete($oldProfilePath);
+                }
+                $user->profile_path = null;
+            }
+    
+            $user->save();
+            // DB::commit();
+    
+            return response()->json([
+                'user' => $user,
+                'requset'=>$request["profile_path"],
+                'message' => 'User updated successfully'
+            ], 200);
+    
+        } catch (\Exception $e) {
+            // DB::rollBack();
+            Log::error('User update error: ' . $e->getMessage());
+            
+            return response()->json([
+                'message' => 'Failed to update user',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     public function getCsrfToken()
     {
         return response()->json(['csrf_token' => csrf_token()]);

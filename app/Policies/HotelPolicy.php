@@ -38,7 +38,7 @@ class HotelPolicy
     public function update(User $user, Hotel $hotel): Response
     {
 
-        return $user->id === $hotel->user_id
+        return $user->id === $hotel->owner_id
             ? Response::allow()
             : Response::deny('You do not own this hotel');
     }
@@ -48,7 +48,7 @@ class HotelPolicy
      */
     public function delete(User $user, Hotel $hotel): Response
     {
-        return $user->id === $hotel->user_id
+        return $user->id === $hotel->owner_id
         ? Response::allow()
         : Response::deny('You do not own this hotel');    }
 

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('phone')->nullable();
+            $table->string('profile_path', 255)->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->enum('role', ['client', 'owner', 'admin'])->default('client');
             $table->string('password');

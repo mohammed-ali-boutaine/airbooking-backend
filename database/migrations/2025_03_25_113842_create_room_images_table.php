@@ -15,6 +15,7 @@ return new class extends Migration {
             ->constrained('rooms')
                 ->onDelete('cascade')
                 ->onUpdate('cascade');
+            $table->boolean('is_primary')->default(false);
 
 
             $table->timestamps();

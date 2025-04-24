@@ -44,16 +44,17 @@ class TagController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'icon_path' => 'sometimes|file|mimes:jpeg,png,jpg,gif,svg|max:2048'
+            'icon_path' => 'sometimes||mimes:jpeg,png,jpg,gif,filesvg,ico|max:2048'
         ]);
 
         try {
-            $iconName = null;
-            
+            $iconName = 'default-tag-icon.ico';
+
             if ($request->hasFile('icon_path')) {
                 $file = $request->file('icon_path');
                 $extension = $file->getClientOriginalExtension();
-                $iconName = Str::uuid() . '.' . $extension;
+                $cleanTagName = Str::slug($request->name);
+                $iconName = $cleanTagName . '_' . Str::uuid() . '.' . $extension;
                 $file->storeAs('icons', $iconName, 'public');
             }
 
@@ -70,7 +71,7 @@ class TagController extends Controller
             if ($iconName && Storage::disk('public')->exists('icons/' . $iconName)) {
                 Storage::disk('public')->delete('icons/' . $iconName);
             }
-            
+
             return response()->json(["message" => "Failed to create tag: " . $e->getMessage()], 500);
         }
     }
@@ -82,7 +83,7 @@ class TagController extends Controller
     {
         try {
             $tag = Tag::findOrFail($id);
-            
+
             return response()->json(["data" => $tag], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(["message" => "Tag not found"], 404);
@@ -99,7 +100,7 @@ class TagController extends Controller
 
         $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'icon_path' => 'sometimes|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'icon_path' => 'sometimes|file|mimes:jpeg,png,jpg,gif,svg,ico|max:2048',
         ]);
 
         try {
@@ -109,27 +110,30 @@ class TagController extends Controller
             if ($request->hasFile('icon_path')) {
                 $file = $request->file('icon_path');
                 $extension = $file->getClientOriginalExtension();
-                $iconName = Str::uuid() . '.' . $extension;
+                $cleanTagName = Str::slug($request->name ?? $tag->name);
+                $iconName = $cleanTagName . '_' . Str::uuid() . '.' . $extension;
                 $file->storeAs('icons', $iconName, 'public');
                 $tag->icon_path = $iconName;
-                
+
                 if ($oldIconPath && Storage::disk('public')->exists('icons/' . $oldIconPath)) {
                     Storage::disk('public')->delete('icons/' . $oldIconPath);
                 }
             }
-            
+
             if ($request->has('name')) {
                 $tag->name = $request->name;
             }
-            
+
             $tag->save();
             return response()->json(["data" => $tag, "message" => "Tag updated successfully"], 200);
         } catch (PDOException $e) {
-            if (isset($iconName) && $iconName !== $oldIconPath && 
-                Storage::disk('public')->exists('icons/' . $iconName)) {
+            if (
+                isset($iconName) && $iconName !== $oldIconPath &&
+                Storage::disk('public')->exists('icons/' . $iconName)
+            ) {
                 Storage::disk('public')->delete('icons/' . $iconName);
             }
-            
+
             return response()->json(["message" => "Failed to update tag: " . $e->getMessage()], 500);
         }
     }
@@ -141,11 +145,11 @@ class TagController extends Controller
     {
         try {
             $tag = Tag::findOrFail($id);
-            
+
             if ($tag->icon_path && Storage::disk('public')->exists('icons/' . $tag->icon_path)) {
                 Storage::disk('public')->delete('icons/' . $tag->icon_path);
             }
-            
+
             $tag->delete();
             return response()->json(["message" => "Tag deleted successfully"], 200);
         } catch (PDOException $e) {
