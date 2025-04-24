@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('profile_path', 255)->nullable();
             $table->string('cover_path', 255)->nullable();
 
-            $table->json('coordinate');
+            $table->json('coordinate')->default(null);
 
             // owner
             $table->foreignId('owner_id')

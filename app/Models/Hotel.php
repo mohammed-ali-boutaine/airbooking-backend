@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Tag;
+use Faker\Core\Coordinates;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,22 +16,35 @@ class Hotel extends Model
 
     protected $fillable = [
         'name',
-        'description',
         'address',
         'city',
         'country',
-        'profile_path',
-        'cover_path',
-        'coordinate',
-        'owner_id',
+
+        
+        'description',
         'phone',
         'email',
-        'website'
+        'website',
+
+
+        'profile_path',
+        'cover_path',
+
+        'coordinate',
+
+        'owner_id',
+
+    ];
+
+    // add cats
+
+    protected $casts = [
+        'coordinate' => 'array',
     ];
 
     public function owner()
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        return $this->belongsTo(Owner::class);
     }
 
     public function tags(): BelongsToMany

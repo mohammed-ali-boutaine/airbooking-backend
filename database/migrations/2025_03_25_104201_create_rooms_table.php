@@ -28,7 +28,6 @@ return new class extends Migration
             $table->integer('bed_numbers');
             $table->integer('capacity');
             $table->decimal('price_per_night', 10, 2)->unsigned();
-            $table->boolean('is_available')->default(true);
             $table->json('amenities')->nullable();
             $table->index(['hotel_id', 'is_available']);
             $table->index('price_per_night');

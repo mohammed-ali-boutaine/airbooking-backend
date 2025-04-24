@@ -19,8 +19,11 @@ class Room extends Model
     
     */
     protected $fillable = [
-        'owner_id',
+        'hotel_id',
+        'room_number',
+        'type',
         'name',
+        'floor',
         'description',
         'bed_numbers',
         'capacity',
@@ -44,11 +47,13 @@ class Room extends Model
         return $this->hasMany(RoomImage::class);
     }
 
-    public function booking(){
+    public function booking()
+    {
         return $this->hasMany(Booking::class);
     }
-
-    public function isAvailbale(){
-
+    public function primaryImage()
+    {
+        return $this->hasOne(RoomImage::class)->where('is_primary', true);
     }
+    public function isAvailbale() {}
 }

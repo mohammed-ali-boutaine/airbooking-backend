@@ -21,7 +21,7 @@ return new class extends Migration
 
             $table->decimal('total_price', 10, 2);
             $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
-            $table->index(['user_id', 'status']);
+            $table->index(['client_id', 'status']);
             $table->index(['room_id', 'check_in', 'check_out']);
             // $table->softDeletes();
             $table->timestamps();
