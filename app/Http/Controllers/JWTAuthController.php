@@ -159,39 +159,44 @@ class JWTAuthController extends Controller
     public function patchUser(Request $request)
     {
         $user = JWTAuth::parseToken()->authenticate();
-    
+
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
             'phone' => 'sometimes|nullable|string|max:20',
             'profile_path' => 'sometimes|nullable|file|image|max:2048'
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-    
+
+        // Use transactions for data integrity
         // DB::beginTransaction();
-    
+
         try {
             $oldProfilePath = $user->profile_path;
-    
+
             // Update user fields
             $user->fill($request->only(['name', 'email', 'phone']));
-    
+
             // Handle profile image upload
             if ($request->hasFile('profile_path')) {
                 $file = $request->file('profile_path');
                 $filename = 'profile_' . Str::uuid() . '.' . $file->guessExtension();
                 $path = $file->storeAs('user-profiles', $filename, 'public');
-                
+
+                if (!$path) {
+                    throw new \Exception('Failed to store profile image');
+                }
+
                 $user->profile_path = $path;
-                
+
                 // Delete old image after successful upload
                 if ($oldProfilePath && Storage::disk('public')->exists($oldProfilePath)) {
                     Storage::disk('public')->delete($oldProfilePath);
                 }
-            } 
+            }
             // Handle profile image removal
             elseif ($request->has('profile_path') && $request->input('profile_path') === null) {
                 if ($oldProfilePath && Storage::disk('public')->exists($oldProfilePath)) {
@@ -199,26 +204,25 @@ class JWTAuthController extends Controller
                 }
                 $user->profile_path = null;
             }
-    
+
             $user->save();
             // DB::commit();
-    
+
             return response()->json([
                 'user' => $user,
-                'requset'=>$request["profile_path"],
                 'message' => 'User updated successfully'
             ], 200);
-    
         } catch (\Exception $e) {
             // DB::rollBack();
             Log::error('User update error: ' . $e->getMessage());
-            
+
             return response()->json([
                 'message' => 'Failed to update user',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+
     public function getCsrfToken()
     {
         return response()->json(['csrf_token' => csrf_token()]);

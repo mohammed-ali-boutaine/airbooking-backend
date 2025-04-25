@@ -131,14 +131,18 @@ class HotelController extends Controller
                 $file = $request->file('profile_path');
                 $extension = $file->getClientOriginalExtension();
                 $filename = 'profile_' . Str::uuid() . '.' . $extension;
-                $validated['profile_path'] = $file->storeAs('hotel-info', $filename, 'public');
+                $relativePath = 'hotel-info/' . $filename;
+                $file->storeAs('hotel-info', $filename, 'public');
+                $validated['profile_path'] = $relativePath;
             }
 
             if ($request->hasFile('cover_path')) {
                 $file = $request->file('cover_path');
                 $extension = $file->getClientOriginalExtension();
                 $filename = 'cover_' . Str::uuid() . '.' . $extension;
-                $validated['cover_path'] = $file->storeAs('hotel-info', $filename, 'public');
+                $relativePath = 'hotel-info/' . $filename;
+                $file->storeAs('hotel-info', $filename, 'public');
+                $validated['cover_path'] = $relativePath;
             }
 
             $validated['coordinate'] = json_encode($validated['coordinate']);
@@ -229,14 +233,18 @@ class HotelController extends Controller
                     $file = $request->file('profile_path');
                     $extension = $file->getClientOriginalExtension();
                     $filename = 'profile_' . Str::uuid() . '.' . $extension;
-                    $validated['profile_path'] = $file->storeAs('hotel-info', $filename, 'public');
+                    $relativePath = 'hotel-info/' . $filename;
+                    $file->storeAs('hotel-info', $filename, 'public');
+                    $validated['profile_path'] = $relativePath;
                 }
 
                 if ($request->hasFile('cover_path')) {
                     $file = $request->file('cover_path');
                     $extension = $file->getClientOriginalExtension();
                     $filename = 'cover_' . Str::uuid() . '.' . $extension;
-                    $validated['cover_path'] = $file->storeAs('hotel-info', $filename, 'public');
+                    $relativePath = 'hotel-info/' . $filename;
+                    $file->storeAs('hotel-info', $filename, 'public');
+                    $validated['cover_path'] = $relativePath;
                 }
             } catch (\Exception $e) {
                 return response()->json(['message' => 'File upload failed'], 500);

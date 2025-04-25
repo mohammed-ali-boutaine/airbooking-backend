@@ -88,10 +88,27 @@ Route::middleware([IsAuth::class])->group(function () {
     // Hotels owned by the authenticated owner
     // Route::get('/owner/hotels', [HotelController::class, 'ownerHotels']);
 });
-// rooms stuff
-Route::post('/rooms', [RoomController::class, 'store'])->middleware('isAuth');
-Route::get('/rooms', [RoomController::class, 'index']);
+
+
+
+
+
+// Room routes
+
+
+Route::get('/hotels/{hotelId}/rooms', [RoomController::class, 'index']);
 Route::get('/rooms/{id}', [RoomController::class, 'show']);
+Route::post('/hotels/{hotelId}/rooms', [RoomController::class, 'store']);
+Route::put('/rooms/{id}', [RoomController::class, 'update']);
+Route::delete('/rooms/{id}', [RoomController::class, 'destroy']);
+Route::post('/rooms/{roomId}/images', [RoomController::class, 'uploadImage']);
+
+// New room routes
+Route::get('/rooms/{id}/availability', [RoomController::class, 'checkAvailability']);
+Route::get('/rooms/search', [RoomController::class, 'search']);
+Route::get('/owner/rooms', [RoomController::class, 'ownerRooms'])->middleware('auth');
+Route::get('/owner/statistics', [RoomController::class, 'ownerStatistics'])->middleware('auth');
+
 // Route::apiResource('hotels', HotelController::class);
 
 
@@ -141,3 +158,23 @@ Route::get("/", function () {
 
 // Route::post('login/google', [AuthController::class, 'loginWithGoogle']);
 // Route::post('login/facebook', [AuthController::class, 'loginWithFacebook']);
+
+// Room availability
+// Route::get('/rooms/{id}/availability', function ($id) {
+//     // Implementation of the endpoint
+// });
+
+// // Room search with filters
+// Route::get('/rooms/search', function () {
+//     // Implementation of the endpoint
+// });
+
+// // Room pricing
+// Route::get('/rooms/{id}/pricing', function ($id) {
+//     // Implementation of the endpoint
+// });
+
+// // Room occupancy status
+// Route::get('/rooms/{id}/status', function ($id) {
+//     // Implementation of the endpoint
+// });

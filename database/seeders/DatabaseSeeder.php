@@ -21,10 +21,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            // Other seeders
             UsersSeeder::class,
             TagSeeder::class,
-            HotelSeeder::class, // Uncomment if you have a HotelSeeder
+            HotelSeeder::class,
+            RoomSeeder::class,
         ]);
     }
 }

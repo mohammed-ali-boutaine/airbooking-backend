@@ -29,7 +29,7 @@ class HotelPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->type === 'owner';
     }
 
     /**
