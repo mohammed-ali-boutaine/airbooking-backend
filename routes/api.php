@@ -26,9 +26,20 @@ Route::post('login', [JWTAuthController::class, 'login']);
 Route::middleware([IsAuth::class])->group(function () {
     Route::get('me', [JWTAuthController::class, 'getUser']);
     Route::post('logout', [JWTAuthController::class, 'logout']);
-    Route::put('me', [JWTAuthController::class, 'updateUser']);
     Route::patch('me', [JWTAuthController::class, 'patchUser']); // Add patch route for partial updates
+
+    // Room image upload & owner-specific endpoints
+    Route::post('/rooms/{roomId}/images', [RoomController::class, 'uploadImage']);
+    Route::get('/owner/rooms', [RoomController::class, 'ownerRooms']);
+    Route::get('/owner/statistics', [RoomController::class, 'ownerStatistics']);
+
+    // Owner bookings
+    Route::get('/owner/bookings', [RoomController::class, 'ownerBookings']);
+
+    // Hotel bookings
+    Route::get('/hotels/{hotelId}/bookings', [RoomController::class, 'hotelBookings']);
 });
+
 // testing
 Route::get('users', function () {
 
@@ -101,13 +112,10 @@ Route::get('/rooms/{id}', [RoomController::class, 'show']);
 Route::post('/hotels/{hotelId}/rooms', [RoomController::class, 'store']);
 Route::put('/rooms/{id}', [RoomController::class, 'update']);
 Route::delete('/rooms/{id}', [RoomController::class, 'destroy']);
-Route::post('/rooms/{roomId}/images', [RoomController::class, 'uploadImage']);
 
 // New room routes
 Route::get('/rooms/{id}/availability', [RoomController::class, 'checkAvailability']);
 Route::get('/rooms/search', [RoomController::class, 'search']);
-Route::get('/owner/rooms', [RoomController::class, 'ownerRooms'])->middleware('auth');
-Route::get('/owner/statistics', [RoomController::class, 'ownerStatistics'])->middleware('auth');
 
 // Route::apiResource('hotels', HotelController::class);
 

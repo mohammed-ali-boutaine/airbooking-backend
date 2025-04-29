@@ -2,19 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use DB;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use Illuminate\Validation\ValidationException;
+
 
 class JWTAuthController extends Controller
 {
+    /**
+     * Create a new AuthController instance.
+     * Apply middleware.
+     *
+     * @return void
+     */
+    // public function __construct()
+    // {
+    //     // Apply auth middleware to all methods except register and login
+    //     // $this->middleware('auth:api', ['except' => ['login', 'register']]);
+    //     // Apply throttle middleware specifically to the login method
+    //     $this->middleware('throttle:5,1')->only('login'); // 5 attempts per 1 minute
+    // }
+
     // User registration
     public function register(Request $request)
     {
@@ -22,7 +39,7 @@ class JWTAuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            // 'profile_path' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:2048'
+            'profile_path' => 'nullable|file|image|max:10240'
         ]);
 
         if ($validator->fails()) {
@@ -36,12 +53,18 @@ class JWTAuthController extends Controller
         ];
 
         // Handle profile image upload
-        // if ($request->hasFile('profile_path')) {
-        //     $file = $request->file('profile_path');
-        //     $extension = $file->getClientOriginalExtension();
-        //     $filename = 'profile_' . Str::uuid() . '.' . $extension;
-        //     $userData['profile_path'] = $file->storeAs('user-profiles', $filename, 'public');
-        // }
+        if ($request->hasFile('profile_path')) {
+            $file = $request->file('profile_path');
+            $extension = $file->getClientOriginalExtension();
+            $filename = 'userprofile_' . Str::uuid() . '.' . $extension;
+            $path = $file->storeAs('user-profiles', $filename, 'public');
+            
+            if (!$path) {
+                throw new \Exception('Failed to store profile image');
+            }
+
+            $userData['profile_path'] = $path;
+        }
 
         $user = User::create($userData);
         $token = JWTAuth::fromUser($user);
@@ -98,133 +121,126 @@ class JWTAuthController extends Controller
         return response()->json(['message' => 'Successfully logged out']);
     }
 
-    // Update user details
+    /**
+     * Update the authenticated user (full update).
+     * Requires all fields to be present.
+     */
     public function updateUser(Request $request)
     {
-        $user = JWTAuth::parseToken()->authenticate();
+        $user = Auth::user();
 
         $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'sometimes|string|min:6|confirmed',
-            'phone' => 'sometimes|string|max:20',
-            'profile_path' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp|max:2048' // Added profile image validation
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'sometimes|required|string|min:6|confirmed', // Use 'sometimes' if password update is optional even for PUT, or 'required' if it must always be provided for a full update. Adjust based on your requirements.
+            // Add other required fields for a full user profile update
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors()->toJson(), 400);
+            return response()->json($validator->errors(), 422);
         }
 
-        // Store old profile path for cleanup if needed
-        $oldProfilePath = $user->profile_path;
+        $data = $request->only(['name', 'email']); // Include all fields expected for a full update
 
-        // Update user fields if provided
-        if ($request->has('name')) {
-            $user->name = $request->get('name');
-        }
-        if ($request->has('email')) {
-            $user->email = $request->get('email');
-        }
-        if ($request->has('password')) {
-            $user->password = Hash::make($request->get('password'));
-        }
-        if ($request->has('phone')) {
-            $user->phone = $request->get('phone');
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
         }
 
-        // Handle profile image upload
-        if ($request->hasFile('profile_path')) {
-            $file = $request->file('profile_path');
-            $extension = $file->getClientOriginalExtension();
-            $filename = 'profile_' . Str::uuid() . '.' . $extension;
-            $user->profile_path = $file->storeAs('user-profiles', $filename, 'public');
-
-            // Delete old profile image if it exists
-            if ($oldProfilePath && Storage::disk('public')->exists($oldProfilePath)) {
-                Storage::disk('public')->delete($oldProfilePath);
-            }
-        }
-
-        $user->save();
+        $user->update($data);
 
         return response()->json([
-            'user' => $user,
-            'message' => 'User updated successfully'
+            'message' => 'User successfully updated',
+            'user' => $user
         ], 200);
     }
 
     /**
-     * Patch update user details (partial update)
+     * Partially update the authenticated user.
+     * Only updates the fields provided in the request.
      */
-    public function patchUser(Request $request)
-    {
-        $user = JWTAuth::parseToken()->authenticate();
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
-            'phone' => 'sometimes|nullable|string|max:20',
-            'profile_path' => 'sometimes|nullable|file|image|max:2048'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        // Use transactions for data integrity
-        // DB::beginTransaction();
-
-        try {
-            $oldProfilePath = $user->profile_path;
-
-            // Update user fields
-            $user->fill($request->only(['name', 'email', 'phone']));
-
-            // Handle profile image upload
-            if ($request->hasFile('profile_path')) {
-                $file = $request->file('profile_path');
-                $filename = 'profile_' . Str::uuid() . '.' . $file->guessExtension();
-                $path = $file->storeAs('user-profiles', $filename, 'public');
-
-                if (!$path) {
-                    throw new \Exception('Failed to store profile image');
-                }
-
-                $user->profile_path = $path;
-
-                // Delete old image after successful upload
-                if ($oldProfilePath && Storage::disk('public')->exists($oldProfilePath)) {
-                    Storage::disk('public')->delete($oldProfilePath);
-                }
-            }
-            // Handle profile image removal
-            elseif ($request->has('profile_path') && $request->input('profile_path') === null) {
-                if ($oldProfilePath && Storage::disk('public')->exists($oldProfilePath)) {
-                    Storage::disk('public')->delete($oldProfilePath);
-                }
-                $user->profile_path = null;
-            }
-
-            $user->save();
-            // DB::commit();
-
-            return response()->json([
-                'user' => $user,
-                'message' => 'User updated successfully'
-            ], 200);
-        } catch (\Exception $e) {
-            // DB::rollBack();
-            Log::error('User update error: ' . $e->getMessage());
-
-            return response()->json([
-                'message' => 'Failed to update user',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function getCsrfToken()
-    {
-        return response()->json(['csrf_token' => csrf_token()]);
-    }
+     public function patchUser(Request $request)
+     {
+         $user = Auth::user();
+     
+         try {
+             // Validation
+             $validated = $request->validate([
+                 'name' => 'sometimes|string|max:255',
+                 'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+                 'password' => 'sometimes|string|min:6|confirmed',
+                 'phone' => 'nullable|string|max:20',
+                 'address' => 'nullable|string|max:255',
+                 'profile_path' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,svg,ico|max:2048',
+             ]);
+     
+             // Store old profile path
+             $oldProfilePath = $user->profile_path;
+     
+             // Handle file upload
+             try {
+                 if ($request->hasFile('profile_path')) {
+                     $file = $request->file('profile_path');
+                     $extension = $file->getClientOriginalExtension();
+                     $filename = 'userprofile_' . Str::uuid() . '.' . $extension;
+                     $relativePath = 'user-profiles/' . $filename;
+     
+                     $file->storeAs('user-profiles', $filename, 'public');
+                     $validated['profile_path'] = $relativePath;
+                 } elseif ($request->exists('profile_path') && is_null($request->input('profile_path'))) {
+                     // If user wants to remove their profile picture
+                     $validated['profile_path'] = null;
+                 }
+             } catch (\Exception $e) {
+                 return response()->json(['message' => 'File upload failed'], 500);
+             }
+     
+             // Handle password hashing
+             if (!empty($validated['password'])) {
+                 $validated['password'] = Hash::make($validated['password']);
+             }
+     
+             // Start transaction
+             DB::beginTransaction();
+     
+             try {
+                 // Update user
+                 $user->update($validated);
+     
+                 // Commit transaction
+                 DB::commit();
+     
+                 // Delete old profile image if a new one was uploaded or if profile was removed
+                 if (
+                     (isset($validated['profile_path']) && $oldProfilePath && $oldProfilePath !== $validated['profile_path']) ||
+                     (array_key_exists('profile_path', $validated) && is_null($validated['profile_path']) && $oldProfilePath)
+                 ) {
+                     Storage::disk('public')->delete($oldProfilePath);
+                 }
+     
+                 return response()->json([
+                     'message' => 'User successfully updated',
+                     'user' => $user->fresh()
+                 ], 200);
+     
+             } catch (\Exception $e) {
+                 DB::rollBack();
+     
+                 // Delete newly uploaded file if transaction failed
+                 if (isset($validated['profile_path'])) {
+                     Storage::disk('public')->delete($validated['profile_path']);
+                 }
+     
+                 return response()->json(['message' => 'User update failed'], 500);
+             }
+     
+         } catch (ValidationException $e) {
+             return response()->json([
+                 'message' => 'Validation failed',
+                 'errors' => $e->errors()
+             ], 422);
+         } catch (\Exception $e) {
+             return response()->json(['message' => 'An error occurred'], 500);
+         }
+     }
 }

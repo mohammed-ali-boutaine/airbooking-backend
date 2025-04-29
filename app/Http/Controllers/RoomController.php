@@ -63,6 +63,8 @@ class RoomController extends Controller
             return response()->json(['message' => 'Room created successfully!', 'room' => $room], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+            // Log the detailed error for debugging
+            \Illuminate\Support\Facades\Log::error('Error creating room: ' . $e->getMessage() . ' Stack Trace: ' . $e->getTraceAsString());
             return response()->json(['message' => 'Error creating room', 'error' => $e->getMessage()], 500);
         }
     }
@@ -72,7 +74,7 @@ class RoomController extends Controller
      */
     public function show($id)
     {
-        $room = Room::with(['images', 'hotel', 'bookings'])->findOrFail($id);
+        $room = Room::with(['images', 'hotel'])->findOrFail($id);
         return response()->json(['data' => $room], 200);
     }
 
@@ -172,6 +174,8 @@ class RoomController extends Controller
             return response()->json(['data' => $image], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+            // Log the detailed error for debugging
+            \Illuminate\Support\Facades\Log::error('Error uploading image: ' . $e->getMessage() . ' Stack Trace: ' . $e->getTraceAsString());
             return response()->json(['message' => 'Error uploading image', 'error' => $e->getMessage()], 500);
         }
     }
@@ -264,11 +268,6 @@ class RoomController extends Controller
      */
     public function ownerStatistics()
     {
-        $ownerId = auth('api')->id();
-
-        return response()->json([
-            'data' => [ $ownerId ]
-        ], 200);
         try {
             $ownerId = auth('api')->id();
 
@@ -280,7 +279,7 @@ class RoomController extends Controller
                 $query->where('owner_id', $ownerId);
             })->count();
 
-            // Get average rating
+            // Get average rating for hotels owned by the owner
             $averageRating = Review::whereHas('hotel', function ($query) use ($ownerId) {
                 $query->where('owner_id', $ownerId);
             })->avg('rating') ?? 0;
@@ -295,7 +294,8 @@ class RoomController extends Controller
                 $query->where('owner_id', $ownerId);
             })
                 ->where('created_at', '>=', now()->subMonths(6))
-                ->selectRaw('MONTH(created_at) as month, YEAR(created_at) as year, SUM(total_price) as revenue')
+                // Use EXTRACT for PostgreSQL compatibility
+                ->selectRaw('EXTRACT(MONTH FROM created_at) as month, EXTRACT(YEAR FROM created_at) as year, SUM(total_price) as revenue')
                 ->groupBy('year', 'month')
                 ->orderBy('year')
                 ->orderBy('month')
@@ -310,17 +310,57 @@ class RoomController extends Controller
 
             return response()->json([
                 'data' => [
-                    'total_hotels' => $totalHotels,
-                    'total_rooms' => $totalRooms,
-                    'average_rating' => round($averageRating, 2),
-                    'total_revenue' => round($totalRevenue, 2),
+                    'total_hotels'    => $totalHotels,
+                    'total_rooms'     => $totalRooms,
+                    'average_rating'  => round($averageRating, 2),
+                    'total_revenue'   => round($totalRevenue, 2),
                     'monthly_revenue' => $monthlyRevenue,
-                    'occupancy_rate' => round($occupancyRate, 2),
-                    'total_bookings' => $totalBookings
+                    'occupancy_rate'  => round($occupancyRate, 2),
+                    'total_bookings'  => $totalBookings
                 ]
             ], 200);
         } catch (\Exception $e) {
+            // Log the detailed error for debugging
+            \Illuminate\Support\Facades\Log::error('Error fetching owner statistics: ' . $e->getMessage() . ' Stack Trace: ' . $e->getTraceAsString());
             return response()->json(['message' => 'Error fetching owner statistics', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Display hotel owner bookings
+     */
+    public function ownerBookings()
+    {
+        try {
+            $ownerId = auth('api')->id();
+
+            $bookings = Booking::whereHas('room.hotel', function ($query) use ($ownerId) {
+                $query->where('owner_id', $ownerId);
+            })->with('room.hotel')->get();
+
+            return response()->json(['data' => $bookings], 200);
+        } catch (\Exception $e) {
+            // Log the detailed error for debugging
+            \Illuminate\Support\Facades\Log::error('Error fetching owner bookings: ' . $e->getMessage() . ' Stack Trace: ' . $e->getTraceAsString());
+            return response()->json(['message' => 'Error fetching owner bookings', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Display hotel bookings
+     */
+    public function hotelBookings($hotelId)
+    {
+        try {
+            $bookings = Booking::whereHas('room', function ($query) use ($hotelId) {
+                $query->where('hotel_id', $hotelId);
+            })->with('room')->get();
+
+            return response()->json(['data' => $bookings], 200);
+        } catch (\Exception $e) {
+            // Log the detailed error for debugging
+            \Illuminate\Support\Facades\Log::error('Error fetching hotel bookings: ' . $e->getMessage() . ' Stack Trace: ' . $e->getTraceAsString());
+            return response()->json(['message' => 'Error fetching hotel bookings', 'error' => $e->getMessage()], 500);
         }
     }
 }

@@ -20,7 +20,7 @@ class Hotel extends Model
         'city',
         'country',
 
-        
+
         'description',
         'phone',
         'email',
@@ -52,6 +52,9 @@ class Hotel extends Model
         return $this->belongsToMany(Tag::class);
     }
 
+    /**
+     * Get the reviews for the hotel.
+     */
     public function reviews()
     {
         return $this->hasMany(Review::class);

@@ -9,14 +9,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Resources\HotelResource;
+use App\Http\Resources\RoomResource;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-// use App\Models\Hotel;
-// use App\Http\Resources\HotelResource;
-// use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-// use Illuminate\Support\Facades\Storage;
-// use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -30,23 +27,52 @@ class HotelController extends Controller
     public function homePageHotels()
     {
         try {
-            $hotels = Hotel::with([
-                // 'owner:id,name',
-                'rooms.images' => function ($query) {
-                    $query->limit(3);
-                },
-                'rooms' => function ($query) {
-                    $query->limit(2);
-                }
-            ])
-                ->limit(10)
+            // $hotels = Hotel::with(['rooms' => function ($query) {
+            //     $query->limit(2)->with(['images' => function ($query) {
+            //         $query->limit(3);
+            //     }]);
+            // }])
+            //     ->withAvg('reviews', 'rating')
+            //     ->withAvg('rooms', 'price_per_night')
+            //     ->withMin('rooms', 'price_per_night')
+            //     ->whereNotNull('profile_path')  // Prioritize hotels with profile images
+            //     ->orderByDesc('reviews_avg_rating')  // Highest rated first
+            //     ->paginate(12);
+
+            // Convert the collection to a resource collection
+            // $hotelsResource = HotelResource::collection($hotels);
+
+            $hotels = Hotel::withAvg('reviews', 'rating')
+            ->withAvg('rooms', 'price_per_night')
+            ->withMin('rooms', 'price_per_night')
+            ->orderByRaw('profile_path IS NULL') // Hotels without image at bottom
+            ->orderByDesc('reviews_avg_rating')
+            ->paginate(12);
+
+        // Now manually limit rooms and images
+        $hotels->getCollection()->transform(function ($hotel) {
+            $hotel->rooms = $hotel->rooms()
+                ->with(['images' => fn($q) => $q->limit(3)])
+                ->limit(2)
                 ->get();
+            return $hotel;
+        });
 
-            $testHotel = Hotel::with(['rooms.primaryImage'])->get();
 
-
-            return response()->json(['data' => $hotels, 'test' => $testHotel]);
+            // Include pagination metadata
+            return response()->json([
+                'data' => $hotels,
+                'meta' => [
+                    'total' => $hotels->total(),
+                    'per_page' => $hotels->perPage(),
+                    'current_page' => $hotels->currentPage(),
+                    'last_page' => $hotels->lastPage(),
+                ]
+            ]);
         } catch (\Exception $e) {
+            Log::error('Error fetching homepage hotels: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['message' => 'Error fetching hotels: ' . $e->getMessage()], 500);
         }
     }
