@@ -13,6 +13,7 @@ use App\Http\Controllers\JWTAuthController;
 // use App\Http\Controllers\SocialAuthController;
 use App\Http\Middleware\IsAuth;
 use App\Models\User;
+use App\Http\Controllers\WishlistController;
 
 
 
@@ -27,6 +28,10 @@ Route::middleware([IsAuth::class])->group(function () {
     Route::get('me', [JWTAuthController::class, 'getUser']);
     Route::post('logout', [JWTAuthController::class, 'logout']);
     Route::patch('me', [JWTAuthController::class, 'patchUser']); // Add patch route for partial updates
+
+    // Wishlist routes
+    Route::post('/hotels/{hotelId}/wishlist', [WishlistController::class, 'toggleWishlist']);
+    Route::get('/wishlist', [WishlistController::class, 'getWishlist']);
 
     // Room image upload & owner-specific endpoints
     Route::post('/rooms/{roomId}/images', [RoomController::class, 'uploadImage']);

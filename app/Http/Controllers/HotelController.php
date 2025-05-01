@@ -27,87 +27,43 @@ class HotelController extends Controller
     public function homePageHotels()
     {
         try {
-            // $hotels = Hotel::with(['rooms' => function ($query) {
-            //     $query->limit(2)->with(['images' => function ($query) {
-            //         $query->limit(3);
-            //     }]);
-            // }])
-            //     ->withAvg('reviews', 'rating')
-            //     ->withAvg('rooms', 'price_per_night')
-            //     ->withMin('rooms', 'price_per_night')
-            //     ->whereNotNull('profile_path')  // Prioritize hotels with profile images
-            //     ->orderByDesc('reviews_avg_rating')  // Highest rated first
-            //     ->paginate(12);
-
-            // Convert the collection to a resource collection
-            // $hotelsResource = HotelResource::collection($hotels);
-
+            // Get all hotels without pagination
             $hotels = Hotel::withAvg('reviews', 'rating')
-            ->withAvg('rooms', 'price_per_night')
-            ->withMin('rooms', 'price_per_night')
-            ->orderByRaw('profile_path IS NULL') // Hotels without image at bottom
-            ->orderByDesc('reviews_avg_rating')
-            ->paginate(12);
-
-        // Now manually limit rooms and images
-        $hotels->getCollection()->transform(function ($hotel) {
-            $hotel->rooms = $hotel->rooms()
-                ->with(['images' => fn($q) => $q->limit(3)])
-                ->limit(2)
+                ->withAvg('rooms', 'price_per_night')
+                ->withMin('rooms', 'price_per_night')
+                ->orderByRaw('profile_path IS NULL') // Push hotels without profile image to bottom
+                ->orderByDesc('reviews_avg_rating')
+                ->with(['rooms' => function ($query) {
+                    $query->limit(2);
+                }, 'rooms.images'])
                 ->get();
-            return $hotel;
-        });
 
+            // Process rooms and images data
+            $hotels->transform(function ($hotel) {
+                $roomCount = $hotel->rooms->count();
 
-            // Include pagination metadata
+                if ($roomCount === 1) {
+                    // For hotels with one room, keep all images
+                    // No changes needed
+                } else {
+                    // For hotels with multiple rooms, limit to 2 rooms with 3 images each
+                    $hotel->rooms = $hotel->rooms->take(2)->each(function ($room) {
+                        $room->images = $room->images->take(3);
+                    });
+                }
+
+                return $hotel;
+            });
+
+            // Return all hotels
             return response()->json([
-                'data' => $hotels,
-                'meta' => [
-                    'total' => $hotels->total(),
-                    'per_page' => $hotels->perPage(),
-                    'current_page' => $hotels->currentPage(),
-                    'last_page' => $hotels->lastPage(),
-                ]
+                'data' => $hotels
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching homepage hotels: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json(['message' => 'Error fetching hotels: ' . $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Display hotels owned by the authenticated user or a specific owner
-     */
-    public function ownerHotels(Request $request, $id = null)
-    {
-        try {
-            $perPage = $request->input('per_page', 10);
-
-            if ($id) {
-                $owner = Owner::findOrFail($id);
-                $hotels = $owner->hotels()->with('rooms')->paginate($perPage);
-            } else {
-                $id = auth()->id();
-                $hotels = Hotel::where('owner_id', $id)
-                    ->with('rooms')
-                    ->paginate($perPage);
-            }
-
-            return response()->json([
-                'data' => $hotels->items(),
-                'meta' => [
-                    'total' => $hotels->total(),
-                    'per_page' => $hotels->perPage(),
-                    'current_page' => $hotels->currentPage(),
-                    'last_page' => $hotels->lastPage(),
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Error fetching hotels: ' . $e->getMessage()
-            ], 500);
         }
     }
 
@@ -204,13 +160,21 @@ class HotelController extends Controller
     public function show($id)
     {
         try {
-            $hotel = Hotel::with([
-                'rooms.images',
-                'tags:id,name',
-                'owner:id,name'
-            ])->findOrFail($id);
+            $hotel = Hotel::withAvg('reviews', 'rating')
+                ->withAvg('rooms', 'price_per_night')
+                ->withMin('rooms', 'price_per_night')
+                ->findOrFail($id);
 
-            return new HotelResource($hotel);
+            // Eager load tags and owner
+            $hotel->loadMissing('tags:id,name', 'owner:id,name');
+
+            // Manually limit rooms and images
+            $hotel->rooms = $hotel->rooms()
+                ->with(['images' => fn($q) => $q->limit(3)])
+                ->limit(2)
+                ->get();
+
+            return response()->json($hotel);
         } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Hotel not found'], 404);
         } catch (\Exception $e) {

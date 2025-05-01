@@ -39,7 +39,7 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var list<string>
      */
-    protected $fillable = ['name', 'email', 'password', 'role','profile_path','phone','address'];
+    protected $fillable = ['name', 'email', 'password', 'role', 'profile_path', 'phone', 'address'];
 
     public function getTable()
     {
@@ -77,5 +77,11 @@ class User extends Authenticatable implements JWTSubject
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function wishlist()
+    {
+        return $this->belongsToMany(Hotel::class, 'wishlists', 'user_id', 'hotel_id')
+            ->withTimestamps();
     }
 }

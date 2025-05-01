@@ -64,4 +64,10 @@ class Hotel extends Model
     {
         return $this->hasMany(Room::class);
     }
+
+    public function wishedBy()
+    {
+        return $this->belongsToMany(User::class, 'wishlists', 'hotel_id', 'user_id')
+            ->withTimestamps();
+    }
 }
