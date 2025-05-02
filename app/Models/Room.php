@@ -26,15 +26,17 @@ class Room extends Model
         'floor',
         'description',
         'bed_numbers',
-        'capacity',
         'price_per_night',
         'is_available',
         'amenities',
+        'capacity',
     ];
 
     protected $casts = [
         'is_available' => 'boolean',
         'amenities' => 'array',
+        'price_per_night' => 'decimal:2',
+        'capacity' => 'integer',
     ];
 
     public function hotel()
@@ -161,10 +163,18 @@ class Room extends Model
     }
 
     /**
-     * Scope a query to filter rooms by capacity
+     * Scope a query to filter rooms by guest capacity.
      */
     public function scopeWithCapacity($query, $capacity)
     {
         return $query->where('capacity', '>=', $capacity);
+    }
+
+    /**
+     * Get the maximum number of guests allowed in the room
+     */
+    public function getMaxGuestsAttribute()
+    {
+        return $this->capacity;
     }
 }

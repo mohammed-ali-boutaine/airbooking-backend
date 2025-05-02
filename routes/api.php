@@ -14,6 +14,7 @@ use App\Http\Controllers\JWTAuthController;
 use App\Http\Middleware\IsAuth;
 use App\Models\User;
 use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\BookingController;
 
 
 
@@ -43,6 +44,13 @@ Route::middleware([IsAuth::class])->group(function () {
 
     // Hotel bookings
     Route::get('/hotels/{hotelId}/bookings', [RoomController::class, 'hotelBookings']);
+
+    // Booking routes
+    Route::get('/bookings', [BookingController::class, 'getBookings']);
+    Route::get('/bookings/{bookingId}', [BookingController::class, 'getBookingDetails']);
+    Route::patch('/bookings/{bookingId}/status', [BookingController::class, 'updateBookingStatus']);
+    Route::post('/bookings/{bookingId}/cancel', [BookingController::class, 'cancelBooking']);
+    Route::post('/bookings', [BookingController::class, 'createBooking']);
 });
 
 // testing
@@ -102,7 +110,7 @@ Route::middleware([IsAuth::class])->group(function () {
     Route::delete('/hotels/{hotel}', [HotelController::class, 'destroy']);
 
     // Hotels owned by the authenticated owner
-    // Route::get('/owner/hotels', [HotelController::class, 'ownerHotels']);
+    Route::get('/owner/hotels', [HotelController::class, 'ownerHotels']);
 });
 
 
@@ -131,31 +139,6 @@ Route::get('/rooms/search', [RoomController::class, 'search']);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // test api
 Route::get("/", function () {
     return response()->json([
@@ -165,29 +148,3 @@ Route::get("/", function () {
 
 
 
-
-// Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect']);
-// Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback']);
-
-// Route::post('login/google', [AuthController::class, 'loginWithGoogle']);
-// Route::post('login/facebook', [AuthController::class, 'loginWithFacebook']);
-
-// Room availability
-// Route::get('/rooms/{id}/availability', function ($id) {
-//     // Implementation of the endpoint
-// });
-
-// // Room search with filters
-// Route::get('/rooms/search', function () {
-//     // Implementation of the endpoint
-// });
-
-// // Room pricing
-// Route::get('/rooms/{id}/pricing', function ($id) {
-//     // Implementation of the endpoint
-// });
-
-// // Room occupancy status
-// Route::get('/rooms/{id}/status', function ($id) {
-//     // Implementation of the endpoint
-// });
