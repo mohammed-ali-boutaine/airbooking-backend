@@ -16,20 +16,15 @@ class BookingResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'cancellation_reason' => $this->cancellation_reason,
+            'check_in' => $this->check_in->format('Y-m-d'),
+            'check_out' => $this->check_out->format('Y-m-d'),
+            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+            'duration_days' => $this->getDurationInDays(),
+            'number_of_guests' => $this->number_of_guests,
             'room' => [
-                'id' => $this->room->id,
-                'name' => $this->room->name,
-                'type' => $this->room->type,
+                'amenities' => $this->room->amenities ?? [],
                 'capacity' => $this->room->capacity,
-                'price_per_night' => $this->room->price_per_night,
-                'amenities' => $this->room->amenities,
-                'images' => $this->room->images->map(function ($image) {
-                    return [
-                        'id' => $image->id,
-                        'url' => $image->url,
-                        'is_primary' => $image->is_primary
-                    ];
-                }),
                 'hotel' => [
                     'id' => $this->room->hotel->id,
                     'name' => $this->room->hotel->name,
@@ -39,17 +34,22 @@ class BookingResource extends JsonResource
                     'phone' => $this->room->hotel->phone,
                     'email' => $this->room->hotel->email
                 ],
+                'id' => $this->room->id,
+                'images' => $this->room->images->map(function ($image) {
+                    return [
+                        'id' => $image->id,
+                        'url' => $image->url,
+                        'is_primary' => $image->is_primary
+                    ];
+                })->toArray(),
+                'name' => $this->room->name,
+                'price_per_night' => $this->room->price_per_night,
+                'type' => $this->room->type
             ],
-            'check_in' => $this->check_in->format('Y-m-d'),
-            'check_out' => $this->check_out->format('Y-m-d'),
-            'number_of_guests' => $this->number_of_guests,
-            'total_price' => $this->total_price,
-            'status' => $this->status,
             'special_requests' => $this->special_requests,
-            'cancellation_reason' => $this->cancellation_reason,
-            'duration_days' => $this->getDurationInDays(),
-            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
+            'status' => $this->status,
+            'total_price' => $this->total_price,
+            'updated_at' => $this->updated_at->format('Y-m-d H:i:s')
         ];
     }
 }

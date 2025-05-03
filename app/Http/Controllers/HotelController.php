@@ -185,34 +185,26 @@ class HotelController extends Controller
     public function ownerHotels(Request $request, $id = null)
     {
         try {
-            $perPage = $request->input('per_page', 10);
-
             if ($id) {
                 $owner = Owner::findOrFail($id);
-                $hotels = $owner->hotels()->with('rooms')->paginate($perPage);
+                $hotels = $owner->hotels()->with('rooms')->get(); // Fetch all hotels without pagination
             } else {
                 $id = auth()->id();
                 $hotels = Hotel::where('owner_id', $id)
                     ->with('rooms')
-                    ->paginate($perPage);
+                    ->get(); // Fetch all hotels without pagination
             }
 
             return response()->json([
-                'data' => $hotels->items(),
-                'meta' => [
-                    'total' => $hotels->total(),
-                    'per_page' => $hotels->perPage(),
-                    'current_page' => $hotels->currentPage(),
-                    'last_page' => $hotels->lastPage(),
-                ]
-                ]);
-            } catch (\Exception $e) {
+                'data' => $hotels,
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Error fetching hotels: ' . $e->getMessage()
             ], 500);
         }
     }
-    
+
     /**
      * Update the specified hotel.
      */

@@ -39,7 +39,8 @@ class JWTAuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'profile_path' => 'nullable|file|image|max:10240'
+            'profile_path' => 'nullable|file|image|max:10240',
+            'role' => 'required|in:client,owner'
         ]);
 
         if ($validator->fails()) {
@@ -50,6 +51,7 @@ class JWTAuthController extends Controller
             'name' => $request->get('name'),
             'email' => $request->get('email'),
             'password' => Hash::make($request->get('password')),
+            'role' => $request->get('role'),
         ];
 
         // Handle profile image upload
@@ -58,7 +60,7 @@ class JWTAuthController extends Controller
             $extension = $file->getClientOriginalExtension();
             $filename = 'userprofile_' . Str::uuid() . '.' . $extension;
             $path = $file->storeAs('user-profiles', $filename, 'public');
-            
+
             if (!$path) {
                 throw new \Exception('Failed to store profile image');
             }
@@ -159,88 +161,86 @@ class JWTAuthController extends Controller
      * Only updates the fields provided in the request.
      */
 
-     public function patchUser(Request $request)
-     {
-         $user = Auth::user();
-     
-         try {
-             // Validation
-             $validated = $request->validate([
-                 'name' => 'sometimes|string|max:255',
-                 'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
-                 'password' => 'sometimes|string|min:6|confirmed',
-                 'phone' => 'nullable|string|max:20',
-                 'address' => 'nullable|string|max:255',
-                 'profile_path' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,svg,ico|max:2048',
-             ]);
-     
-             // Store old profile path
-             $oldProfilePath = $user->profile_path;
-     
-             // Handle file upload
-             try {
-                 if ($request->hasFile('profile_path')) {
-                     $file = $request->file('profile_path');
-                     $extension = $file->getClientOriginalExtension();
-                     $filename = 'userprofile_' . Str::uuid() . '.' . $extension;
-                     $relativePath = 'user-profiles/' . $filename;
-     
-                     $file->storeAs('user-profiles', $filename, 'public');
-                     $validated['profile_path'] = $relativePath;
-                 } elseif ($request->exists('profile_path') && is_null($request->input('profile_path'))) {
-                     // If user wants to remove their profile picture
-                     $validated['profile_path'] = null;
-                 }
-             } catch (\Exception $e) {
-                 return response()->json(['message' => 'File upload failed'], 500);
-             }
-     
-             // Handle password hashing
-             if (!empty($validated['password'])) {
-                 $validated['password'] = Hash::make($validated['password']);
-             }
-     
-             // Start transaction
-             DB::beginTransaction();
-     
-             try {
-                 // Update user
-                 $user->update($validated);
-     
-                 // Commit transaction
-                 DB::commit();
-     
-                 // Delete old profile image if a new one was uploaded or if profile was removed
-                 if (
-                     (isset($validated['profile_path']) && $oldProfilePath && $oldProfilePath !== $validated['profile_path']) ||
-                     (array_key_exists('profile_path', $validated) && is_null($validated['profile_path']) && $oldProfilePath)
-                 ) {
-                     Storage::disk('public')->delete($oldProfilePath);
-                 }
-     
-                 return response()->json([
-                     'message' => 'User successfully updated',
-                     'user' => $user->fresh()
-                 ], 200);
-     
-             } catch (\Exception $e) {
-                 DB::rollBack();
-     
-                 // Delete newly uploaded file if transaction failed
-                 if (isset($validated['profile_path'])) {
-                     Storage::disk('public')->delete($validated['profile_path']);
-                 }
-     
-                 return response()->json(['message' => 'User update failed'], 500);
-             }
-     
-         } catch (ValidationException $e) {
-             return response()->json([
-                 'message' => 'Validation failed',
-                 'errors' => $e->errors()
-             ], 422);
-         } catch (\Exception $e) {
-             return response()->json(['message' => 'An error occurred'], 500);
-         }
-     }
+    public function patchUser(Request $request)
+    {
+        $user = Auth::user();
+
+        try {
+            // Validation
+            $validated = $request->validate([
+                'name' => 'sometimes|string|max:255',
+                'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+                'password' => 'sometimes|string|min:6|confirmed',
+                'phone' => 'nullable|string|max:20',
+                'address' => 'nullable|string|max:255',
+                'profile_path' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,svg,ico|max:2048',
+            ]);
+
+            // Store old profile path
+            $oldProfilePath = $user->profile_path;
+
+            // Handle file upload
+            try {
+                if ($request->hasFile('profile_path')) {
+                    $file = $request->file('profile_path');
+                    $extension = $file->getClientOriginalExtension();
+                    $filename = 'userprofile_' . Str::uuid() . '.' . $extension;
+                    $relativePath = 'user-profiles/' . $filename;
+
+                    $file->storeAs('user-profiles', $filename, 'public');
+                    $validated['profile_path'] = $relativePath;
+                } elseif ($request->exists('profile_path') && is_null($request->input('profile_path'))) {
+                    // If user wants to remove their profile picture
+                    $validated['profile_path'] = null;
+                }
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'File upload failed'], 500);
+            }
+
+            // Handle password hashing
+            if (!empty($validated['password'])) {
+                $validated['password'] = Hash::make($validated['password']);
+            }
+
+            // Start transaction
+            DB::beginTransaction();
+
+            try {
+                // Update user
+                $user->update($validated);
+
+                // Commit transaction
+                DB::commit();
+
+                // Delete old profile image if a new one was uploaded or if profile was removed
+                if (
+                    (isset($validated['profile_path']) && $oldProfilePath && $oldProfilePath !== $validated['profile_path']) ||
+                    (array_key_exists('profile_path', $validated) && is_null($validated['profile_path']) && $oldProfilePath)
+                ) {
+                    Storage::disk('public')->delete($oldProfilePath);
+                }
+
+                return response()->json([
+                    'message' => 'User successfully updated',
+                    'user' => $user->fresh()
+                ], 200);
+            } catch (\Exception $e) {
+                DB::rollBack();
+
+                // Delete newly uploaded file if transaction failed
+                if (isset($validated['profile_path'])) {
+                    Storage::disk('public')->delete($validated['profile_path']);
+                }
+
+                return response()->json(['message' => 'User update failed'], 500);
+            }
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'An error occurred'], 500);
+        }
+    }
 }
