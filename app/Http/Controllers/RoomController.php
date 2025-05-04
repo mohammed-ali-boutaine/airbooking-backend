@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Room;
-use App\Models\RoomImage;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 use App\Models\Hotel;
 use App\Models\Review;
 use App\Models\Booking;
+use App\Models\RoomImage;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class RoomController extends Controller
 {
@@ -264,6 +266,22 @@ class RoomController extends Controller
     }
 
     /**
+     * Get all rooms (admin only)
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function adminRooms()
+    {
+        $rooms = Room::with(['hotel'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'rooms' => $rooms
+        ]);
+    }
+
+    /**
      * Get owner statistics including total hotels, rooms, average rating, and revenue
      */
     public function ownerStatistics()
@@ -361,6 +379,51 @@ class RoomController extends Controller
             // Log the detailed error for debugging
             \Illuminate\Support\Facades\Log::error('Error fetching hotel bookings: ' . $e->getMessage() . ' Stack Trace: ' . $e->getTraceAsString());
             return response()->json(['message' => 'Error fetching hotel bookings', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Admin method to delete any room
+     */
+    public function adminDeleteRoom(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+
+            // Check if user is admin
+            if ($user->role !== 'admin') {
+                return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
+            }
+
+            $room = Room::with('images')->findOrFail($id);
+
+            // Get room information for the response
+            $roomInfo = [
+                'id' => $room->id,
+                'name' => $room->name,
+                'hotel_id' => $room->hotel_id,
+                'hotel_name' => $room->hotel->name ?? 'Unknown Hotel'
+            ];
+
+            // Delete room images first
+            foreach ($room->images as $image) {
+                if ($image->image_path && Storage::disk('public')->exists($image->image_path)) {
+                    Storage::disk('public')->delete($image->image_path);
+                }
+                $image->delete();
+            }
+
+            // Delete the room
+            $room->delete();
+
+            return response()->json([
+                'message' => "Room '{$roomInfo['name']}' has been deleted successfully by admin",
+                'deleted_room' => $roomInfo
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Room not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error deleting room: ' . $e->getMessage()], 500);
         }
     }
 }

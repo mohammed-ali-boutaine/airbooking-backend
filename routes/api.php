@@ -16,9 +16,6 @@ use App\Models\User;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\BookingController;
 
-
-
-
 // ------------------------------------------------
 // Auth 
 Route::post('register', [JWTAuthController::class, 'register']);
@@ -30,6 +27,23 @@ Route::middleware([IsAuth::class])->group(function () {
     Route::post('logout', [JWTAuthController::class, 'logout']);
     Route::patch('me', [JWTAuthController::class, 'patchUser']); // Add patch route for partial updates
 
+    // Admin routes
+    Route::middleware(['admin'])->group(function () {
+        Route::get('/admin/bookings', [BookingController::class, 'getAllBookings']);
+        Route::get('/admin/hotels', [HotelController::class, 'adminHotels']);
+        Route::get('/admin/rooms', [RoomController::class, 'adminRooms']);
+        Route::get('/admin/users', [JWTAuthController::class, 'getAllUsers']);
+
+        // New admin route for deleting hotels
+        Route::delete('/admin/hotels/{id}', [HotelController::class, 'adminDeleteHotel']);
+
+        // New admin route for deleting rooms
+        Route::delete('/admin/rooms/{id}', [RoomController::class, 'adminDeleteRoom']);
+
+        // New admin route for deleting users
+        Route::delete('/admin/users/{id}', [JWTAuthController::class, 'adminDeleteUser']);
+    });
+
     // Wishlist routes
     Route::post('/hotels/{hotelId}/wishlist', [WishlistController::class, 'toggleWishlist']);
     Route::get('/wishlist', [WishlistController::class, 'getWishlist']);
@@ -37,6 +51,7 @@ Route::middleware([IsAuth::class])->group(function () {
     // Room image upload & owner-specific endpoints
     Route::post('/rooms/{roomId}/images', [RoomController::class, 'uploadImage']);
     Route::get('/owner/rooms', [RoomController::class, 'ownerRooms']);
+    // Route::get('/admin/rooms', [RoomController::class, 'adminRooms']);
     Route::get('/owner/statistics', [RoomController::class, 'ownerStatistics']);
 
     // Owner bookings
@@ -75,21 +90,7 @@ Route::post("/tags", [TagController::class, "store"]);
 Route::put("/tags/{id}", [TagController::class, "update"]);
 Route::delete("/tags/{id}", [TagController::class, "destroy"]);
 // --------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
 //------------ hotel stuuff
-
 
 // Public routes
 
@@ -113,10 +114,6 @@ Route::middleware([IsAuth::class])->group(function () {
     Route::get('/owner/hotels', [HotelController::class, 'ownerHotels']);
 });
 
-
-
-
-
 // Room routes
 
 
@@ -129,22 +126,3 @@ Route::delete('/rooms/{id}', [RoomController::class, 'destroy']);
 // New room routes
 Route::get('/rooms/{id}/availability', [RoomController::class, 'checkAvailability']);
 Route::get('/rooms/search', [RoomController::class, 'search']);
-
-// Route::apiResource('hotels', HotelController::class);
-
-
-
-// ------------------------------------------------
-
-
-
-
-// test api
-Route::get("/", function () {
-    return response()->json([
-        'message' => 'Air booking Api'
-    ], 200);
-});
-
-
-

@@ -213,4 +213,20 @@ class BookingController extends Controller
             })
             ->exists();
     }
+
+    /**
+     * Get all bookings (admin only)
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getAllBookings()
+    {
+        $bookings = Booking::with(['client', 'room.hotel'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'bookings' => $bookings
+        ]);
+    }
 }

@@ -243,4 +243,67 @@ class JWTAuthController extends Controller
             return response()->json(['message' => 'An error occurred'], 500);
         }
     }
+
+    /**
+     * Get all users (admin only)
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getAllUsers()
+    {
+        $users = User::select('id', 'name', 'email', 'role', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'users' => $users
+        ]);
+    }
+
+    /**
+     * Admin method to delete a user
+     */
+    public function adminDeleteUser(Request $request, $userId)
+    {
+        try {
+            $admin = $request->user();
+
+            // Check if user is admin
+            if ($admin->role !== 'admin') {
+                return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
+            }
+
+            // Check if trying to delete self
+            if ($userId == $admin->id) {
+                return response()->json(['message' => 'Cannot delete yourself.'], 400);
+            }
+
+            $user = User::findOrFail($userId);
+
+            // Store user info for response
+            $userInfo = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role
+            ];
+
+            // Delete profile image if exists
+            if ($user->profile_path && Storage::disk('public')->exists($user->profile_path)) {
+                Storage::disk('public')->delete($user->profile_path);
+            }
+
+            // Delete the user
+            $user->delete();
+
+            return response()->json([
+                'message' => "User '{$userInfo['name']}' has been deleted successfully",
+                'deleted_user' => $userInfo
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'User not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error deleting user: ' . $e->getMessage()], 500);
+        }
+    }
 }

@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'isAuth' => IsAuth::class,
             'is_hotel_owner' => \App\Http\Middleware\IsHotelOwner::class,
+            'admin'=>App\Http\Middleware\AdminMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

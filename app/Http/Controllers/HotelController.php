@@ -393,4 +393,65 @@ class HotelController extends Controller
             return response()->json(['message' => 'Error fetching hotels: ' . $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Get all hotels (admin only)
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function adminHotels()
+    {
+        $hotels = Hotel::with(['owner', 'rooms'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'hotels' => $hotels
+        ]);
+    }
+
+    /**
+     * Admin method to delete any hotel
+     */
+    public function adminDeleteHotel(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+
+            // Check if user is admin
+            if ($user->role !== 'admin') {
+                return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
+            }
+
+            $hotel = Hotel::findOrFail($id);
+
+            // Store file paths for cleanup after successful deletion
+            $profilePath = $hotel->profile_path;
+            $coverPath = $hotel->cover_path;
+
+            // Get hotel name for the response
+            $hotelName = $hotel->name;
+
+            // Delete the hotel
+            $hotel->delete();
+
+            // Clean up associated files
+            if ($profilePath) {
+                Storage::disk('public')->delete($profilePath);
+            }
+
+            if ($coverPath) {
+                Storage::disk('public')->delete($coverPath);
+            }
+
+            return response()->json([
+                'message' => "Hotel '{$hotelName}' has been deleted successfully by admin",
+                'deleted_hotel_id' => $id
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Hotel not found'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error deleting hotel: ' . $e->getMessage()], 500);
+        }
+    }
 }
